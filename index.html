@@ -1,0 +1,533 @@
+<!--
+  Tier List de Proficiência modelo SAEPE
+  By Fang and Claw 2026
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tier List de Proficiência</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+
+    #loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 14px; color: #aaa; }
+
+    #site-off-view { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; gap: 12px; }
+    #site-off-view h2 { font-size: 22px; font-weight: 600; color: #888; }
+    #site-off-view p { font-size: 14px; color: #aaa; }
+
+    #app { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 5rem; }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: #666; margin-bottom: 1.25rem; }
+
+    #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; background: #fff; color: #1a1a1a; border: 1px solid #ddd; border-radius: 8px; transition: background 0.15s; margin-bottom: 4px; }
+    #refresh-btn:hover { background: #f0f0f0; }
+    #last-updated { font-size: 11px; color: #aaa; margin-left: 8px; }
+
+    .main-tabs { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; margin: 1rem 0 1.25rem; width: fit-content; }
+    .main-tab { padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: #666; border: none; transition: background 0.15s, color 0.15s; }
+    .main-tab.active { background: #1a1a1a; color: #fff; }
+    .main-tab:not(:last-child) { border-right: 1px solid #ddd; }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .tab-group { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; }
+    .tab { padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: #666; border: none; transition: background 0.15s, color 0.15s; }
+    .tab.active { background: #1a1a1a; color: #fff; }
+    .tab:not(:last-child) { border-right: 1px solid #ddd; }
+
+    .test-selector { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+    .test-selector label { font-size: 13px; color: #666; }
+    .test-selector select { font-size: 13px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+
+    .stats-bar { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 10px 14px; flex: 1; min-width: 80px; border: 1px solid #eee; }
+    .stat-val { font-size: 22px; font-weight: 600; color: #1a1a1a; }
+    .stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+
+    .tier-row { margin-bottom: 10px; border-radius: 10px; border: 1px solid #e0e0e0; overflow: hidden; }
+    .tier-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+    .tier-label { font-size: 22px; font-weight: 700; min-width: 28px; }
+    .tier-name { font-size: 14px; font-weight: 600; }
+    .tier-count { font-size: 12px; color: #888; margin-left: auto; }
+    .tier-body { padding: 8px 14px 12px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; border-top: 1px solid rgba(0,0,0,0.06); }
+    .student-card { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .empty-tier { font-size: 13px; color: #aaa; padding: 4px 0; font-style: italic; }
+
+    .tier-S .tier-header { background: #e8f5e9; }
+    .tier-S .tier-label, .tier-S .tier-name { color: #1b5e20; }
+    .tier-S .tier-body { background: #f1f8f1; }
+    .tier-S .student-card { background: #c8e6c9; color: #1b5e20; }
+    .tier-A .tier-header { background: #fffde7; }
+    .tier-A .tier-label, .tier-A .tier-name { color: #6d4c00; }
+    .tier-A .tier-body { background: #fffff5; }
+    .tier-A .student-card { background: #fff9c4; color: #6d4c00; }
+    .tier-B .tier-header { background: #fff3e0; }
+    .tier-B .tier-label, .tier-B .tier-name { color: #7f3500; }
+    .tier-B .tier-body { background: #fff8f2; }
+    .tier-B .student-card { background: #ffe0b2; color: #7f3500; }
+    .tier-C .tier-header { background: #ffebee; }
+    .tier-C .tier-label, .tier-C .tier-name { color: #7f0000; }
+    .tier-C .tier-body { background: #fff5f5; }
+    .tier-C .student-card { background: #ffcdd2; color: #7f0000; }
+
+    .roster-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #eee; }
+    .roster-table th { font-size: 12px; font-weight: 600; color: #888; padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; background: #fafafa; }
+    .roster-table td { font-size: 13px; padding: 9px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .roster-table tr:last-child td { border-bottom: none; }
+    .roster-table tr:hover td { background: #fafafa; }
+    .tier-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-S { background: #c8e6c9; color: #1b5e20; }
+    .badge-A { background: #fff9c4; color: #6d4c00; }
+    .badge-B { background: #ffe0b2; color: #7f3500; }
+    .badge-C { background: #ffcdd2; color: #7f0000; }
+    .badge-none { background: #eee; color: #aaa; }
+
+    .chart-wrap { background: #fff; border-radius: 10px; border: 1px solid #eee; padding: 1.25rem; margin-bottom: 1rem; }
+    .student-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+    .student-chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #666; transition: all 0.15s; }
+    .student-chip.selected { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+    .no-data { text-align: center; padding: 3rem; font-size: 14px; color: #aaa; }
+    .chart-note { font-size: 11px; color: #aaa; text-align: center; margin-top: 8px; }
+
+    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; text-align: center; font-size: 12px; color: #aaa; }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">Carregando...</div>
+
+  <div id="site-off-view" style="display:none;">
+    <h2>Fora do ar</h2>
+    <p>Esta página está temporariamente indisponível.<br>Volte em breve.</p>
+  </div>
+
+  <div id="main-app" style="display:none;">
+    <div id="app">
+      <h1>Tier List de Proficiência</h1>
+      <p class="subtitle">Desempenho dos alunos por turma ou visão geral</p>
+
+      <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
+      <span id="last-updated"></span>
+
+      <div class="main-tabs">
+        <button class="main-tab active" onclick="setMainTab('tierlist')">Tier List</button>
+        <button class="main-tab" onclick="setMainTab('alunos')">Alunos</button>
+        <button class="main-tab" onclick="setMainTab('progresso')">Progresso</button>
+      </div>
+
+      <div id="tab-tierlist">
+        <div class="controls">
+          <div class="tab-group" id="view-tabs">
+            <button class="tab active" onclick="setView('latest')">Último teste</button>
+            <button class="tab" onclick="setView('overall')">Geral</button>
+          </div>
+          <div class="tab-group" id="class-tabs">
+            <button class="tab active" onclick="setClass('all')">Todas</button>
+            <button class="tab" onclick="setClass('A')">Turma A</button>
+            <button class="tab" onclick="setClass('B')">Turma B</button>
+          </div>
+        </div>
+        <div id="test-selector-row" class="test-selector" style="display:none;">
+          <label>Teste:</label>
+          <select id="test-select" onchange="renderTierList()"></select>
+        </div>
+        <div id="stats-bar"></div>
+        <div id="tier-list"></div>
+      </div>
+
+      <div id="tab-alunos" style="display:none;">
+        <div class="controls">
+          <div class="tab-group" id="roster-class-tabs">
+            <button class="tab active" onclick="setRosterClass('all')">Todas</button>
+            <button class="tab" onclick="setRosterClass('A')">Turma A</button>
+            <button class="tab" onclick="setRosterClass('B')">Turma B</button>
+          </div>
+        </div>
+        <div id="roster-table-wrap"></div>
+      </div>
+
+      <div id="tab-progresso" style="display:none;">
+        <div class="controls">
+          <div class="tab-group" id="chart-mode-tabs">
+            <button class="tab active" onclick="setChartMode('class')">Por turma</button>
+            <button class="tab" onclick="setChartMode('individual')">Individual</button>
+          </div>
+          <div class="tab-group" id="chart-class-tabs">
+            <button class="tab active" onclick="setChartClass('all')">Todas</button>
+            <button class="tab" onclick="setChartClass('A')">Turma A</button>
+            <button class="tab" onclick="setChartClass('B')">Turma B</button>
+          </div>
+        </div>
+        <div id="individual-selector" style="display:none;">
+          <p style="font-size:12px;color:#888;margin-bottom:8px;">Selecione alunos para comparar:</p>
+          <div class="student-selector" id="student-chips"></div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="progress-chart"></canvas>
+        </div>
+        <p class="chart-note">Médias por teste. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+      </div>
+
+    </div>
+
+    <footer>
+      By Fang and Claw 2026 &mdash; 2026
+    </footer>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJI9P8Kv9PXPABmRK9damI5JfSBSG6PK0Ce-LoUKe4-9Ks5qdA-wy9q7Bg6JLAPxbryg/exec';
+
+    const TIERS = [
+      { id: 'S', label: 'S', name: 'Desejável',   min: 306, max: 500 },
+      { id: 'A', label: 'A', name: 'Básico',       min: 271, max: 305 },
+      { id: 'B', label: 'B', name: 'Elementar II', min: 226, max: 270 },
+      { id: 'C', label: 'C', name: 'Elementar I',  min: 0,   max: 225 },
+    ];
+
+    let appData = { students: [], tests: [], scores: [], online: true };
+
+    async function fetchData() {
+      try {
+        const res = await fetch(SCRIPT_URL + '?action=getData');
+        const json = await res.json();
+        appData = json;
+        return true;
+      } catch(e) {
+        console.error('Erro ao buscar dados:', e);
+        return false;
+      }
+    }
+
+    function scoreToTier(score) {
+      for (const t of TIERS) {
+        if (score >= t.min && score <= t.max) return t.id;
+      }
+      return 'C';
+    }
+
+    function getStudentTierForTest(studentId, testId) {
+      const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === testId);
+      if (!entry) return null;
+      return entry.override || scoreToTier(parseFloat(entry.score));
+    }
+
+    function getStudentOverallTier(studentId) {
+      const entries = appData.scores.filter(s => s.student_id === studentId);
+      if (!entries.length) return null;
+      const relevant = entries.filter(e => !isNaN(parseFloat(e.score)));
+      if (!relevant.length) return null;
+      const avg = relevant.reduce((a, b) => a + parseFloat(b.score), 0) / relevant.length;
+      return scoreToTier(Math.round(avg));
+    }
+
+    let uiState = {
+      view: 'latest',
+      classFilter: 'all',
+      rosterClass: 'all',
+      chartMode: 'class',
+      chartClass: 'all',
+      selectedStudents: []
+    };
+
+    let progressChart = null;
+
+    function setMainTab(tab) {
+      ['tierlist', 'alunos', 'progresso'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+      });
+      document.querySelectorAll('.main-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso'][i] === tab);
+      });
+      if (tab === 'progresso') renderChart();
+      if (tab === 'alunos') renderRoster();
+    }
+
+    function setView(v) {
+      uiState.view = v;
+      document.querySelectorAll('#view-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['latest', 'overall'][i] === v);
+      });
+      renderTierList();
+    }
+
+    function setClass(c) {
+      uiState.classFilter = c;
+      document.querySelectorAll('#class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderTierList();
+    }
+
+    function setRosterClass(c) {
+      uiState.rosterClass = c;
+      document.querySelectorAll('#roster-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderRoster();
+    }
+
+    function setChartMode(m) {
+      uiState.chartMode = m;
+      document.querySelectorAll('#chart-mode-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['class', 'individual'][i] === m);
+      });
+      document.getElementById('individual-selector').style.display = m === 'individual' ? 'block' : 'none';
+      document.getElementById('chart-class-tabs').style.display = m === 'class' ? 'flex' : 'none';
+      renderChart();
+    }
+
+    function setChartClass(c) {
+      uiState.chartClass = c;
+      document.querySelectorAll('#chart-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderChart();
+    }
+
+    function getLatestTestId() {
+      return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
+    }
+
+    function getSelectedTestId() {
+      const sel = document.getElementById('test-select');
+      return sel && sel.value ? sel.value : getLatestTestId();
+    }
+
+    function getTurmaFromId(studentId) {
+      return studentId.startsWith('3A') ? 'A' : 'B';
+    }
+
+    function renderTierList() {
+      const isLatest = uiState.view === 'latest';
+      const selRow = document.getElementById('test-selector-row');
+      const testSel = document.getElementById('test-select');
+
+      if (isLatest && appData.tests.length > 1) {
+        selRow.style.display = 'flex';
+        const prev = testSel.value;
+        testSel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + t.name + '</option>').join('');
+        if (prev && appData.tests.find(t => t.id === prev)) testSel.value = prev;
+        else testSel.value = getLatestTestId();
+      } else {
+        selRow.style.display = 'none';
+      }
+
+      const students = appData.students.filter(s => {
+        const turma = getTurmaFromId(s.id);
+        return uiState.classFilter === 'all' || turma === uiState.classFilter;
+      });
+
+      const testId = isLatest ? getSelectedTestId() : null;
+      const tierMap = { S: [], A: [], B: [], C: [] };
+
+      for (const s of students) {
+        const tier = isLatest ? getStudentTierForTest(s.id, testId) : getStudentOverallTier(s.id);
+        if (tier && tierMap[tier]) tierMap[tier].push(s);
+      }
+
+      const placed = Object.values(tierMap).flat().length;
+      const statsBar = document.getElementById('stats-bar');
+      statsBar.innerHTML = TIERS.map(t => {
+        const count = tierMap[t.id].length;
+        const pct = placed ? Math.round(count / placed * 100) : 0;
+        return '<div class="stat-card"><div class="stat-val">' + count + '</div><div class="stat-lbl">' + t.name + ' (' + pct + '%)</div></div>';
+      }).join('') + '<div class="stat-card"><div class="stat-val">' + students.length + '</div><div class="stat-lbl">Total de alunos</div></div>';
+
+      document.getElementById('tier-list').innerHTML = TIERS.map(t => {
+        const list = tierMap[t.id];
+        const cards = list.length
+          ? list.map(s => '<div class="student-card">' + s.name + '</div>').join('')
+          : '<span class="empty-tier">nenhum aluno neste nível</span>';
+        return '<div class="tier-row tier-' + t.id + '">' +
+          '<div class="tier-header"><span class="tier-label">' + t.label + '</span><span class="tier-name">' + t.name + '</span><span class="tier-count">' + list.length + ' aluno' + (list.length !== 1 ? 's' : '') + '</span></div>' +
+          '<div class="tier-body">' + cards + '</div></div>';
+      }).join('');
+    }
+
+    function renderRoster() {
+      const wrap = document.getElementById('roster-table-wrap');
+      const students = appData.students.filter(s => {
+        const turma = getTurmaFromId(s.id);
+        return uiState.rosterClass === 'all' || turma === uiState.rosterClass;
+      });
+
+      if (!students.length) { wrap.innerHTML = '<div class="no-data">Nenhum aluno encontrado.</div>'; return; }
+
+      const testHeaders = appData.tests.map(t => '<th>' + t.name + '</th>').join('');
+      const rows = students.map(s => {
+        const testCells = appData.tests.map(t => {
+          const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+          if (!entry) return '<td style="color:#ccc;text-align:center;">—</td>';
+          const tier = entry.override || scoreToTier(parseFloat(entry.score));
+          return '<td style="text-align:center;"><span class="tier-badge badge-' + tier + '">' + entry.score + '</span></td>';
+        }).join('');
+        const overallTier = getStudentOverallTier(s.id);
+        return '<tr><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
+          '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + overallTier + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
+      }).join('');
+
+      wrap.innerHTML = '<div style="overflow-x:auto;"><table class="roster-table"><thead><tr><th>Nome</th><th>Turma</th>' + testHeaders + '<th>Geral</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById('progress-chart');
+      if (!canvas) return;
+      if (!appData.tests.length) {
+        document.getElementById('chart-wrap').innerHTML = '<div class="no-data">Nenhum teste disponível ainda.</div>';
+        return;
+      }
+
+      const labels = appData.tests.map(t => t.name);
+      const palette = ['#1a1a1a','#e63946','#2a9d8f','#e9c46a','#f4a261','#264653','#8338ec','#06d6a0','#fb8500','#023047'];
+      let datasets = [];
+
+      if (uiState.chartMode === 'class') {
+        const classes = uiState.chartClass === 'all' ? ['A', 'B'] : [uiState.chartClass];
+        classes.forEach((cls, ci) => {
+          const students = appData.students.filter(s => getTurmaFromId(s.id) === cls);
+          const data = appData.tests.map(t => {
+            const scores = students
+              .map(s => { const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id); return e ? parseFloat(e.score) : null; })
+              .filter(v => v !== null && !isNaN(v));
+            return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+          });
+          datasets.push({ label: 'Turma ' + cls, data, borderColor: palette[ci], backgroundColor: palette[ci] + '22', tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false });
+        });
+      } else {
+        if (!uiState.selectedStudents.length) return;
+        uiState.selectedStudents.forEach((sid, i) => {
+          const s = appData.students.find(st => st.id === sid);
+          if (!s) return;
+          const data = appData.tests.map(t => {
+            const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+            return e ? parseFloat(e.score) : null;
+          });
+          datasets.push({ label: s.name, data, borderColor: palette[i % palette.length], backgroundColor: palette[i % palette.length] + '22', tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false });
+        });
+      }
+
+      if (progressChart) { progressChart.destroy(); progressChart = null; }
+      const ctx = canvas.getContext('2d');
+      progressChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } }
+          },
+          scales: {
+            y: { min: 0, max: 500, ticks: { font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'refLines',
+          afterDraw(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xLeft = chart.chartArea.left;
+            const xRight = chart.chartArea.right;
+            [{ val: 306, label: 'Desejável', color: '#2e7d32' },
+             { val: 271, label: 'Básico', color: '#f9a825' },
+             { val: 226, label: 'El. II', color: '#e65100' }].forEach(ref => {
+              const y = yAxis.getPixelForValue(ref.val);
+              ctx.save();
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 1;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath(); ctx.moveTo(xLeft, y); ctx.lineTo(xRight, y); ctx.stroke();
+              ctx.fillStyle = ref.color;
+              ctx.font = '10px system-ui';
+              ctx.fillText(ref.label, xRight + 4, y + 4);
+              ctx.restore();
+            });
+          }
+        }]
+      });
+    }
+
+    function renderStudentChips() {
+      const wrap = document.getElementById('student-chips');
+      if (!wrap) return;
+      const students = appData.students.slice().sort((a, b) => a.name.localeCompare(b.name));
+      wrap.innerHTML = students.map(s =>
+        '<div class="student-chip' + (uiState.selectedStudents.includes(s.id) ? ' selected' : '') + '" onclick="toggleChip(\'' + s.id + '\')">' + s.name + ' (' + getTurmaFromId(s.id) + ')</div>'
+      ).join('');
+    }
+
+    function toggleChip(sid) {
+      const idx = uiState.selectedStudents.indexOf(sid);
+      if (idx >= 0) uiState.selectedStudents.splice(idx, 1);
+      else uiState.selectedStudents.push(sid);
+      renderStudentChips();
+      renderChart();
+    }
+
+    const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+
+    async function init() {
+      const success = await fetchData();
+      document.getElementById('loading-screen').style.display = 'none';
+
+      if (!success) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        document.getElementById('site-off-view').querySelector('p').textContent = 'Erro ao carregar dados. Verifique sua conexão.';
+        return;
+      }
+
+      if (!appData.online) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        return;
+      }
+
+      document.getElementById('main-app').style.display = 'block';
+      updateLastRefreshed();
+      renderTierList();
+      renderRoster();
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    async function autoRefresh() {
+      await fetchData();
+      if (appData.online) {
+        renderTierList();
+        renderRoster();
+        if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+        updateLastRefreshed();
+      }
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    async function refreshData() {
+      const btn = document.getElementById('refresh-btn');
+      btn.textContent = '↻ Atualizando...';
+      btn.disabled = true;
+      const success = await fetchData();
+      if (success) {
+        renderTierList();
+        renderRoster();
+        if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+        updateLastRefreshed();
+      } else {
+        alert('Erro ao atualizar. Verifique sua conexão.');
+      }
+      btn.textContent = '↻ Atualizar';
+      btn.disabled = false;
+    }
+
+    function updateLastRefreshed() {
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
