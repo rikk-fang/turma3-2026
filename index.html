@@ -277,6 +277,7 @@
       });
       document.getElementById('individual-selector').style.display = m === 'individual' ? 'block' : 'none';
       document.getElementById('chart-class-tabs').style.display = m === 'class' ? 'flex' : 'none';
+      if (m === 'individual') renderStudentChips();
       renderChart();
     }
 
