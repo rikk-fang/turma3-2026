@@ -345,7 +345,6 @@
         const currentTestId = isLatest ? (getSelectedTestId() || getLatestTestId()) : null;
         const entry = currentTestId ? appData.scores.find(sc => sc.student_id === s.id && sc.test_id === currentTestId) : null;
         const absent = entry && entry.override === 'ausente';
-        console.log(s.name, entry, absent);
         return '<div class="student-card">' + s.name + (absent ? ' <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#e74c3c;margin-left:4px;vertical-align:middle;" title="Ausente"></span>' : '') + '</div>';
       }).join('')
           : '<span class="empty-tier">nenhum aluno neste nível</span>';
