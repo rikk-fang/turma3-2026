@@ -318,6 +318,9 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
 
     function getLatestTestId() {
       return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
+      function getTestLabel(test) {
+      return test.date ? test.name + ' — ' + test.date : test.name;
+}
     }
 
     function getSelectedTestId() {
@@ -337,7 +340,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
       if (isLatest && appData.tests.length > 1) {
         selRow.style.display = 'flex';
         const prev = testSel.value;
-        testSel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + t.name + '</option>').join('');
+        testSel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
         if (prev && appData.tests.find(t => t.id === prev)) testSel.value = prev;
         else testSel.value = getLatestTestId();
       } else {
@@ -385,7 +388,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
 
       if (!students.length) { wrap.innerHTML = '<div class="no-data">Nenhum aluno encontrado.</div>'; return; }
 
-      const testHeaders = appData.tests.map(t => '<th>' + t.name + '</th>').join('');
+      const testHeaders = appData.tests.map(t => '<th>' + getTestLabel(t) + '</th>').join('');
       const rows = students.map(s => {
         const testCells = appData.tests.map(t => {
           const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
@@ -409,7 +412,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
         return;
       }
 
-      const labels = appData.tests.map(t => t.name);
+     const labels = appData.tests.map(t => getTestLabel(t));
       const palette = ['#1a1a1a','#e63946','#2a9d8f','#e9c46a','#f4a261','#264653','#8338ec','#06d6a0','#fb8500','#023047'];
       let datasets = [];
 
