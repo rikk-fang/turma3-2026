@@ -316,23 +316,24 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
       renderChart();
     }
 
-    function getLatestTestId() {
-      return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
+      function getLatestTestId() {
+        return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
+      }
+      
+      function getSelectedTestId() {
+        const sel = document.getElementById('test-select');
+        return sel && sel.value ? sel.value : getLatestTestId();
+      }
+      
+      function getTurmaFromId(studentId) {
+        return studentId.startsWith('3A') ? 'A' : 'B';
+      }
+      
       function getTestLabel(test) {
-      return test.date ? test.name + ' — ' + test.date : test.name;
-}
-    }
-
-    function getSelectedTestId() {
-      const sel = document.getElementById('test-select');
-      return sel && sel.value ? sel.value : getLatestTestId();
-    }
-
-    function getTurmaFromId(studentId) {
-      return studentId.startsWith('3A') ? 'A' : 'B';
-    }
-
-    function renderTierList() {
+        return test.date ? test.name + ' — ' + test.date : test.name;
+      }
+      
+      function renderTierList() {
       const isLatest = uiState.view === 'latest';
       const selRow = document.getElementById('test-selector-row');
       const testSel = document.getElementById('test-select');
