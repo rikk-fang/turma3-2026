@@ -1,6 +1,6 @@
 <!--
   Tier List de Proficiência modelo SAEPE
-  By Fang and Claw 2026
+  By Fang and Claw 2026 v2.0
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -119,6 +119,67 @@ body.dark .student-chip { background: #2a2a2a; color: #aaa; border-color: #444; 
 body.dark .student-chip.selected { background: #e0e0e0; color: #1a1a1a; }
 body.dark footer { border-color: #444; }
 body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 1.5rem; max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative; }
+    .modal-close { position: absolute; top: 12px; right: 14px; font-size: 18px; cursor: pointer; color: #aaa; background: none; border: none; }
+    .modal-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .modal-turma { font-size: 13px; color: #888; margin-bottom: 1rem; }
+    .modal-absent { font-size: 14px; color: #aaa; font-style: italic; padding: 1rem 0; }
+    .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+    .modal-stat { background: #f5f5f5; border-radius: 8px; padding: 10px 12px; }
+    .modal-stat-val { font-size: 18px; font-weight: 600; }
+    .modal-stat-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+    .modal-section-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .modal-descriptor-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .modal-descriptor-name { font-size: 13px; flex: 1; }
+    .modal-descriptor-bar-wrap { flex: 2; background: #eee; border-radius: 4px; height: 8px; overflow: hidden; }
+    .modal-descriptor-bar { height: 8px; border-radius: 4px; background: #e63946; }
+    .modal-descriptor-count { font-size: 12px; color: #888; min-width: 36px; text-align: right; }
+    .student-card { cursor: pointer; transition: opacity 0.15s; }
+    .student-card:hover { opacity: 0.75; }
+    body.dark .modal-box { background: #2a2a2a; color: #e0e0e0; }
+    body.dark .modal-stat { background: #333; }
+    body.dark .modal-descriptor-bar-wrap { background: #444; }
+    .padrao-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #eee; margin-top: 1rem; }
+    .padrao-table th { font-size: 12px; font-weight: 600; color: #888; padding: 10px 14px; text-align: left; border-bottom: 1px solid #eee; background: #fafafa; cursor: help; }
+    .padrao-table td { font-size: 13px; padding: 9px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    .padrao-table tr:last-child td { border-bottom: none; }
+    .padrao-table tr:hover td { background: #fafafa; }
+    .complexidade-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-elementar1 { background: #ffcdd2; color: #7f0000; }
+    .badge-elementar2 { background: #ffe0b2; color: #7f3500; }
+    .badge-basico { background: #fff9c4; color: #6d4c00; }
+    .badge-desejavel { background: #c8e6c9; color: #1b5e20; }
+    .desc-error-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .desc-error-name { font-size: 13px; flex: 1; }
+    .desc-error-bar-wrap { flex: 2; background: #eee; border-radius: 4px; height: 8px; overflow: hidden; }
+    .desc-error-bar { height: 8px; border-radius: 4px; background: #e63946; }
+    .desc-error-pct { font-size: 12px; color: #888; min-width: 36px; text-align: right; }
+    body.dark .padrao-table { background: #2a2a2a; border-color: #444; }
+    body.dark .padrao-table th { background: #222; color: #888; border-color: #444; }
+    body.dark .padrao-table td { border-color: #333; color: #e0e0e0; }
+    body.dark .padrao-table tr:hover td { background: #333; }
+    .ranking-wrap { margin-top: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .ranking-block { flex: 1; min-width: 280px; background: #fff; border-radius: 10px; border: 1px solid #eee; overflow: hidden; }
+    .ranking-block-title { font-size: 13px; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #eee; background: #fafafa; color: #444; }
+    .ranking-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
+    .ranking-row:last-child { border-bottom: none; }
+    .ranking-row:hover { background: #fafafa; }
+    .ranking-pos { font-size: 20px; font-weight: 700; min-width: 28px; text-align: center; }
+    .ranking-pos-1 { color: #f9a825; }
+    .ranking-pos-2 { color: #90a4ae; }
+    .ranking-pos-3 { color: #a1887f; }
+    .ranking-pos-4, .ranking-pos-5 { color: #bdbdbd; }
+    .ranking-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .ranking-turma { font-size: 11px; color: #aaa; }
+    .ranking-val { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+    .ranking-val-growth { color: #2a9d8f; }
+    body.dark .ranking-block { background: #2a2a2a; border-color: #444; }
+    body.dark .ranking-block-title { background: #222; color: #aaa; border-color: #444; }
+    body.dark .ranking-row { border-color: #333; }
+    body.dark .ranking-row:hover { background: #333; }
+    body.dark .ranking-val { color: #e0e0e0; }
   </style>
 </head>
 <body>
@@ -143,6 +204,9 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
         <button class="main-tab active" onclick="setMainTab('tierlist')">Tier List</button>
         <button class="main-tab" onclick="setMainTab('alunos')">Alunos</button>
         <button class="main-tab" onclick="setMainTab('progresso')">Progresso</button>
+        <button class="main-tab" onclick="setMainTab('padrao')">Padrão de Teste</button>
+        <button class="main-tab" onclick="setMainTab('evolucao')">Evolução</button>
+        <button class="main-tab" onclick="setMainTab('ranking')">Ranking</button>
       </div>
 
       <div id="tab-tierlist">
@@ -175,7 +239,33 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
         </div>
         <div id="roster-table-wrap"></div>
       </div>
-
+      <div id="tab-ranking" style="display:none;">
+        <div class="controls" style="margin-top:1rem;">
+          <div class="tab-group" id="ranking-class-tabs">
+            <button class="tab active" onclick="setRankingClass('all')">Geral</button>
+            <button class="tab" onclick="setRankingClass('A')">Turma A</button>
+            <button class="tab" onclick="setRankingClass('B')">Turma B</button>
+          </div>
+        </div>
+        <div class="ranking-wrap" id="ranking-wrap"></div>
+      </div>
+      <div id="tab-evolucao" style="display:none;">
+        <div class="chart-wrap" style="margin-top:1rem;">
+          <canvas id="evolucao-chart"></canvas>
+        </div>
+        <p class="chart-note">Média de Nota e Theta por teste ao longo da série. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+      </div>
+      <div id="tab-padrao" style="display:none;">
+        <div class="test-selector" style="margin-top:1rem;">
+          <label>Teste:</label>
+          <select id="padrao-test-select" onchange="renderPadrao()"></select>
+        </div>
+        <div id="padrao-table-wrap"></div>
+        <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
+          <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor — turma</div>
+          <div id="padrao-desc-bars"></div>
+        </div>
+      </div>
       <div id="tab-progresso" style="display:none;">
         <div class="controls">
           <div class="tab-group" id="chart-mode-tabs">
@@ -199,14 +289,22 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
       </div>
 
     </div>
-
+<div class="modal-overlay" id="profile-modal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeProfile()">✕</button>
+        <div class="modal-name" id="modal-name"></div>
+        <div class="modal-turma" id="modal-turma"></div>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+    
     <footer>
-      By Fang and Claw 2026 &mdash; 2026
+      By Fang and Claw 2026 &mdash; v2.0 2026
     </footer>
   </div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJI9P8Kv9PXPABmRK9damI5JfSBSG6PK0Ce-LoUKe4-9Ks5qdA-wy9q7Bg6JLAPxbryg/exec';
+   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2ALwsorEthBfSo1oszDCwPVFRe8tT5jnZr8c64uS9R91ES-xX6zRJmR1hVX8LzePLRg/exec';
 
     const TIERS = [
       { id: 'S', label: 'S', name: 'Desejável',   min: 306, max: 500 },
@@ -251,26 +349,31 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
       return scoreToTier(Math.round(avg));
     }
 
-    let uiState = {
+let uiState = {
       view: 'latest',
       classFilter: 'all',
       rosterClass: 'all',
       chartMode: 'class',
       chartClass: 'all',
-      selectedStudents: []
+      selectedStudents: [],
+      rankingClass: 'all'
+
     };
 
     let progressChart = null;
 
     function setMainTab(tab) {
-      ['tierlist', 'alunos', 'progresso'].forEach(t => {
+      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'].forEach(t => {
         document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
       });
-      document.querySelectorAll('.main-tab').forEach((el, i) => {
-        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso'][i] === tab);
+     document.querySelectorAll('.main-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'][i] === tab);
       });
-      if (tab === 'progresso') renderChart();
+if (tab === 'progresso') renderChart();
       if (tab === 'alunos') renderRoster();
+      if (tab === 'padrao') renderPadrao();
+    if (tab === 'evolucao') renderEvolucao();
+    if (tab === 'ranking') renderRanking();
     }
 
     function setView(v) {
@@ -372,7 +475,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
       document.getElementById('tier-list').innerHTML = TIERS.map(t => {
         const list = tierMap[t.id];
         const cards = list.length
-       ? list.map(s => '<div class="student-card">' + s.name + '</div>').join('')
+       ? list.map(s => '<div class="student-card" onclick="openProfile(\'' + s.id + '\')">' + s.name + '</div>').join('')
           : '<span class="empty-tier">nenhum aluno neste nível</span>';
         return '<div class="tier-row tier-' + t.id + '">' +
           '<div class="tier-header"><span class="tier-label">' + t.label + '</span><span class="tier-name">' + t.name + '</span><span class="tier-count">' + list.length + ' aluno' + (list.length !== 1 ? 's' : '') + '</span></div>' +
@@ -397,8 +500,8 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
           const tier = entry.override || scoreToTier(parseFloat(entry.score));
           return '<td style="text-align:center;"><span class="tier-badge badge-' + tier + '">' + entry.score + '</span></td>';
         }).join('');
-        const overallTier = getStudentOverallTier(s.id);
-        return '<tr><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
+     const overallTier = getStudentOverallTier(s.id);
+        return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
           '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + overallTier + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
       }).join('');
 
@@ -568,6 +671,283 @@ if (savedTheme === 'dark') {
   document.body.classList.add('dark');
   document.getElementById('theme-btn').textContent = '○ Claro';
 }
+    function openProfile(studentId) {
+      const student = appData.students.find(s => s.id === studentId);
+      if (!student) return;
+      const turma = getTurmaFromId(studentId);
+      document.getElementById('modal-name').textContent = student.name;
+      document.getElementById('modal-turma').textContent = 'Turma ' + turma;
+
+      const isAbsent = appData.absent && appData.absent.includes(studentId);
+      const body = document.getElementById('modal-body');
+
+      if (isAbsent) {
+        body.innerHTML = '<div class="modal-absent">Aluno ausente neste teste.</div>';
+      } else {
+        const latestTest = getLatestTestId();
+        const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === latestTest);
+
+        const stats = entry ? `
+          <div class="modal-stats">
+            <div class="modal-stat"><div class="modal-stat-val">${entry.score}</div><div class="modal-stat-lbl">Nota</div></div>
+            <div class="modal-stat"><div class="modal-stat-val">${entry.nivel || '—'}</div><div class="modal-stat-lbl">Nível</div></div>
+            <div class="modal-stat"><div class="modal-stat-val">${entry.theta || '—'}</div><div class="modal-stat-lbl">Theta</div></div>
+            <div class="modal-stat"><div class="modal-stat-val">${entry.se_eap || '—'}</div><div class="modal-stat-lbl">SE</div></div>
+            <div class="modal-stat"><div class="modal-stat-val">${entry.incoerencias || '0'}</div><div class="modal-stat-lbl">Incoerências</div></div>
+            <div class="modal-stat"><div class="modal-stat-val">${entry.total_mistakes || '—'}</div><div class="modal-stat-lbl">Erros</div></div>
+          </div>` : '<div class="modal-absent">Sem dados para o último teste.</div>';
+
+        const descEntries = appData.descriptors
+          ? appData.descriptors.filter(d => d.student_id === studentId && d.test_id === latestTest)
+              .filter(d => parseInt(d.erros) > 0)
+              .sort((a, b) => parseInt(b.erros) - parseInt(a.erros))
+          : [];
+
+        const maxErros = descEntries.length ? parseInt(descEntries[0].erros) : 1;
+        const descHtml = descEntries.length ? `
+          <div class="modal-section-title">Descritores com mais erros</div>
+          ${descEntries.map(d => `
+            <div class="modal-descriptor-row">
+              <div class="modal-descriptor-name">${d.descriptor}</div>
+              <div class="modal-descriptor-bar-wrap"><div class="modal-descriptor-bar" style="width:${Math.round(parseInt(d.erros)/maxErros*100)}%"></div></div>
+              <div class="modal-descriptor-count">${d.erros}/${d.total_questoes}</div>
+            </div>`).join('')}` : '';
+
+        body.innerHTML = stats + descHtml;
+      }
+
+      document.getElementById('profile-modal').classList.add('open');
+    }
+
+    function closeProfile() {
+      document.getElementById('profile-modal').classList.remove('open');
+    }
+
+    document.getElementById('profile-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeProfile();
+    });
+    function renderPadrao() {
+      const sel = document.getElementById('padrao-test-select');
+      if (!sel) return;
+
+      const prev = sel.value;
+      sel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
+      if (prev && appData.tests.find(t => t.id === prev)) sel.value = prev;
+      else sel.value = getLatestTestId();
+
+      const testId = sel.value;
+      const items = appData.testModel ? appData.testModel.filter(i => i.test_id === testId) : [];
+      const wrap = document.getElementById('padrao-table-wrap');
+
+      const tooltips = {
+        item:         'Número da questão na prova',
+        gabarito:     'Alternativa correta entre os distratores',
+        descriptor:   'Habilidade esperada na resolução do item, limitada à matriz SAEPE',
+        complexity:   'Classificação do item na escala: Elementar I, Elementar II, Básico ou Desejável',
+        ancoragem:    'Intervalo de -2,0 a 2,0 que representa a dificuldade do item no cálculo TRI'
+      };
+
+      function complexBadge(c) {
+        const map = {
+          'ELEMENTAR I':  'badge-elementar1',
+          'ELEMENTAR II': 'badge-elementar2',
+          'BÁSICO':       'badge-basico',
+          'DESEJÁVEL':    'badge-desejavel',
+        };
+        const cls = map[c ? c.toUpperCase() : ''] || 'badge-none';
+        return '<span class="complexidade-badge ' + cls + '">' + (c || '—') + '</span>';
+      }
+
+      if (!items.length) {
+        wrap.innerHTML = '<div class="no-data">Nenhum dado de modelo disponível para este teste.</div>';
+      } else {
+        const rows = items.map(i =>
+          '<tr><td>' + (i.item || '—') + '</td><td><strong>' + (i.gabarito || '—') + '</strong></td><td>' + (i.descriptor || '—') + '</td><td>' + complexBadge(i.complexity) + '</td><td>' + (i.ancoragem || '—') + '</td></tr>'
+        ).join('');
+
+        wrap.innerHTML = '<div style="overflow-x:auto;"><table class="padrao-table"><thead><tr>' +
+          '<th title="' + tooltips.item + '">Item</th>' +
+          '<th title="' + tooltips.gabarito + '">Gabarito</th>' +
+          '<th title="' + tooltips.descriptor + '">Descritor</th>' +
+          '<th title="' + tooltips.complexity + '">Complexidade</th>' +
+          '<th title="' + tooltips.ancoragem + '">Ancoragem</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      }
+
+      // descriptor error bars
+      const descWrap = document.getElementById('padrao-desc-bars');
+      const descData = appData.descriptors ? appData.descriptors.filter(d => d.test_id === testId) : [];
+      const descMap = {};
+      for (const d of descData) {
+        if (!descMap[d.descriptor]) descMap[d.descriptor] = { erros: 0, total: 0 };
+        descMap[d.descriptor].erros += parseInt(d.erros) || 0;
+        descMap[d.descriptor].total += parseInt(d.total_questoes) || 0;
+      }
+      const descSorted = Object.entries(descMap)
+        .map(([desc, v]) => ({ desc, pct: v.total ? v.erros / v.total : 0, erros: v.erros, total: v.total }))
+        .sort((a, b) => b.pct - a.pct);
+
+      if (!descSorted.length) {
+        descWrap.innerHTML = '<div class="no-data">Sem dados de erro por descritor.</div>';
+      } else {
+        descWrap.innerHTML = descSorted.map(d =>
+          '<div class="desc-error-row">' +
+          '<div class="desc-error-name">' + d.desc + '</div>' +
+          '<div class="desc-error-bar-wrap"><div class="desc-error-bar" style="width:' + Math.round(d.pct * 100) + '%"></div></div>' +
+          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '%</div>' +
+          '</div>'
+        ).join('');
+      }
+    }
+    let evolucaoChart = null;
+
+    function renderEvolucao() {
+      const canvas = document.getElementById('evolucao-chart');
+      if (!canvas) return;
+      if (!appData.tests.length) return;
+
+      const labels = appData.tests.map(t => getTestLabel(t));
+      const notaData = appData.tests.map(t => t.mean_nota ? parseFloat(t.mean_nota) : null);
+      const thetaData = appData.tests.map(t => t.mean_theta ? parseFloat(t.mean_theta) : null);
+
+      const datasets = [
+        {
+          label: 'Média Nota',
+          data: notaData,
+          borderColor: '#1a1a1a',
+          backgroundColor: '#1a1a1a22',
+          tension: 0.3,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: false,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Média Theta (×50+250)',
+          data: thetaData.map(v => v !== null ? Math.round(250 + 50 * v) : null),
+          borderColor: '#e63946',
+          backgroundColor: '#e6394622',
+          tension: 0.3,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: false,
+          borderDash: [5, 5],
+          yAxisID: 'y'
+        }
+      ];
+
+      if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
+      const ctx = canvas.getContext('2d');
+      evolucaoChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } }
+          },
+          scales: {
+            y: { min: 0, max: 500, ticks: { font: { size: 11 } }, grid: { color: '#f0f0f0' } },
+            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'evolucaoRefLines',
+          afterDraw(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xLeft = chart.chartArea.left;
+            const xRight = chart.chartArea.right;
+            [{ val: 306, label: 'Desejável', color: '#2e7d32' },
+             { val: 271, label: 'Básico', color: '#f9a825' },
+             { val: 226, label: 'El. II', color: '#e65100' }].forEach(ref => {
+              const y = yAxis.getPixelForValue(ref.val);
+              ctx.save();
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 1;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath(); ctx.moveTo(xLeft, y); ctx.lineTo(xRight, y); ctx.stroke();
+              ctx.fillStyle = ref.color;
+              ctx.font = '10px system-ui';
+              ctx.fillText(ref.label, xRight + 4, y + 4);
+              ctx.restore();
+            });
+          }
+        }]
+      });
+    }
+    function setRankingClass(c) {
+      uiState.rankingClass = c;
+      document.querySelectorAll('#ranking-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderRanking();
+    }
+
+    function renderRanking() {
+      const wrap = document.getElementById('ranking-wrap');
+      if (!wrap) return;
+
+      const cls = uiState.rankingClass || 'all';
+      const students = appData.students.filter(s =>
+        cls === 'all' || getTurmaFromId(s.id) === cls
+      );
+
+      const latestTest = getLatestTestId();
+      const firstTest = appData.tests.length ? appData.tests[0].id : null;
+
+      // top 5 by current theta
+      const byTheta = students
+        .map(s => {
+          const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          return { student: s, theta: entry && entry.theta ? parseFloat(entry.theta) : null };
+        })
+        .filter(x => x.theta !== null)
+        .sort((a, b) => b.theta - a.theta)
+        .slice(0, 5);
+
+      // top 5 by growth (latest theta - first theta)
+      const byGrowth = students
+        .map(s => {
+          const first = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === firstTest);
+          const latest = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          const delta = (first && latest && first.theta && latest.theta)
+            ? parseFloat(latest.theta) - parseFloat(first.theta)
+            : null;
+          return { student: s, delta };
+        })
+        .filter(x => x.delta !== null)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+
+      function posLabel(i) {
+        const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
+        return medals[i] || (i + 1) + 'º';
+      }
+
+      function rankingRows(list, valFn, valClass) {
+        if (!list.length) return '<div class="no-data">Sem dados suficientes.</div>';
+        return list.map((x, i) =>
+          '<div class="ranking-row" onclick="openProfile(\'' + x.student.id + '\')">' +
+          '<div class="ranking-pos ranking-pos-' + (i + 1) + '">' + posLabel(i) + '</div>' +
+          '<div><div class="ranking-name">' + x.student.name + '</div>' +
+          '<div class="ranking-turma">Turma ' + getTurmaFromId(x.student.id) + '</div></div>' +
+          '<div class="ranking-val ' + valClass + '">' + valFn(x) + '</div>' +
+          '</div>'
+        ).join('');
+      }
+
+      wrap.innerHTML =
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">🏆 Top 5 — Melhor Theta atual</div>' +
+        rankingRows(byTheta, x => x.theta.toFixed(4), '') +
+        '</div>' +
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento</div>' +
+        rankingRows(byGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(4), 'ranking-val-growth') +
+        '</div>';
+    }
     init();
   </script>
 
