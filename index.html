@@ -180,6 +180,16 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
     body.dark .ranking-row { border-color: #333; }
     body.dark .ranking-row:hover { background: #333; }
     body.dark .ranking-val { color: #e0e0e0; }
+    @media print {
+      body * { visibility: hidden; }
+      #roster-table-wrap, #roster-table-wrap * { visibility: visible; }
+      #roster-table-wrap { position: absolute; top: 0; left: 0; width: 100%; }
+      .print-footer { visibility: visible; position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; font-size: 11px; color: #aaa; padding: 8px; }
+    }
+    .print-btn { padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; background: #fff; color: #1a1a1a; border: 1px solid #ddd; border-radius: 8px; transition: background 0.15s; }
+    .print-btn:hover { background: #f0f0f0; }
+    body.dark .print-btn { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
+    body.dark .print-btn:hover { background: #333; }
   </style>
 </head>
 <body>
@@ -237,7 +247,9 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
             <button class="tab" onclick="setRosterClass('B')">Turma B</button>
           </div>
         </div>
+        <button class="print-btn" onclick="printRoster()">⎙ Imprimir</button>
         <div id="roster-table-wrap"></div>
+        <div class="print-footer" id="print-footer"></div>
       </div>
       <div id="tab-ranking" style="display:none;">
         <div class="controls" style="margin-top:1rem;">
@@ -502,7 +514,7 @@ if (tab === 'progresso') renderChart();
         }).join('');
      const overallTier = getStudentOverallTier(s.id);
         return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
-          '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + overallTier + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
+          '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + TIERS.find(t => t.id === overallTier).name + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
       }).join('');
 
       wrap.innerHTML = '<div style="overflow-x:auto;"><table class="roster-table"><thead><tr><th>Nome</th><th>Turma</th>' + testHeaders + '<th>Geral</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
@@ -947,6 +959,11 @@ if (savedTheme === 'dark') {
         '<div class="ranking-block-title">📈 Top 5 — Maior crescimento</div>' +
         rankingRows(byGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(4), 'ranking-val-growth') +
         '</div>';
+    }
+    function printRoster() {
+      const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      document.getElementById('print-footer').textContent = 'By Fang and Claw 2026 — ' + now;
+      window.print();
     }
     init();
   </script>
