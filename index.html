@@ -700,52 +700,69 @@ if (savedTheme === 'dark') {
   document.body.classList.add('dark');
   document.getElementById('theme-btn').textContent = '○ Claro';
 }
-    function openProfile(studentId) {
+function openProfile(studentId) {
       const student = appData.students.find(s => s.id === studentId);
       if (!student) return;
       const turma = getTurmaFromId(studentId);
       document.getElementById('modal-name').textContent = student.name;
       document.getElementById('modal-turma').textContent = 'Turma ' + turma;
 
-      const isAbsent = appData.absent && appData.absent.includes(studentId);
-      const body = document.getElementById('modal-body');
+      const testsWithData = appData.tests.filter(t =>
+        appData.scores.some(s => s.student_id === studentId && s.test_id === t.id)
+      );
 
+      const latestTest = getLatestTestId();
+      const selectorHtml = testsWithData.length > 1 ? `
+        <div style="margin-bottom:1rem;">
+          <select id="modal-test-select" onchange="renderProfileBody('${studentId}', this.value)"
+            style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;width:100%;">
+            ${testsWithData.map(t => `<option value="${t.id}" ${t.id === latestTest ? 'selected' : ''}>${getTestLabel(t)}</option>`).join('')}
+          </select>
+        </div>` : '';
+
+      document.getElementById('modal-body').innerHTML = selectorHtml + '<div id="modal-profile-body"></div>';
+      renderProfileBody(studentId, latestTest);
+      document.getElementById('profile-modal').classList.add('open');
+    }
+
+    function renderProfileBody(studentId, testId) {
+      const body = document.getElementById('modal-profile-body');
+      if (!body) return;
+
+      const isAbsent = appData.absent && appData.absent.includes(studentId);
       if (isAbsent) {
         body.innerHTML = '<div class="modal-absent">Aluno ausente neste teste.</div>';
-      } else {
-        const latestTest = getLatestTestId();
-        const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === latestTest);
-
-        const stats = entry ? `
-          <div class="modal-stats">
-            <div class="modal-stat"><div class="modal-stat-val">${entry.score}</div><div class="modal-stat-lbl">Nota</div></div>
-            <div class="modal-stat"><div class="modal-stat-val">${entry.nivel || '—'}</div><div class="modal-stat-lbl">Nível</div></div>
-            <div class="modal-stat"><div class="modal-stat-val">${entry.theta || '—'}</div><div class="modal-stat-lbl">Theta</div></div>
-            <div class="modal-stat"><div class="modal-stat-val">${entry.se_eap || '—'}</div><div class="modal-stat-lbl">SE</div></div>
-            <div class="modal-stat"><div class="modal-stat-val">${entry.incoerencias || '0'}</div><div class="modal-stat-lbl">Incoerências</div></div>
-            <div class="modal-stat"><div class="modal-stat-val">${entry.total_mistakes || '—'}</div><div class="modal-stat-lbl">Erros</div></div>
-          </div>` : '<div class="modal-absent">Sem dados para o último teste.</div>';
-
-        const descEntries = appData.descriptors
-          ? appData.descriptors.filter(d => d.student_id === studentId && d.test_id === latestTest)
-              .filter(d => parseInt(d.erros) > 0)
-              .sort((a, b) => parseInt(b.erros) - parseInt(a.erros))
-          : [];
-
-        const maxErros = descEntries.length ? parseInt(descEntries[0].erros) : 1;
-        const descHtml = descEntries.length ? `
-          <div class="modal-section-title">Descritores com mais erros</div>
-          ${descEntries.map(d => `
-            <div class="modal-descriptor-row">
-              <div class="modal-descriptor-name">${d.descriptor}</div>
-              <div class="modal-descriptor-bar-wrap"><div class="modal-descriptor-bar" style="width:${Math.round(parseInt(d.erros)/maxErros*100)}%"></div></div>
-              <div class="modal-descriptor-count">${d.erros}/${d.total_questoes}</div>
-            </div>`).join('')}` : '';
-
-        body.innerHTML = stats + descHtml;
+        return;
       }
 
-      document.getElementById('profile-modal').classList.add('open');
+      const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === testId);
+      const stats = entry ? `
+        <div class="modal-stats">
+          <div class="modal-stat"><div class="modal-stat-val">${entry.score}</div><div class="modal-stat-lbl">Nota</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.nivel || '—'}</div><div class="modal-stat-lbl">Nível</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.theta || '—'}</div><div class="modal-stat-lbl">Theta</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.se_eap || '—'}</div><div class="modal-stat-lbl">SE</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.incoerencias || '0'}</div><div class="modal-stat-lbl">Incoerências</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.total_mistakes || '—'}</div><div class="modal-stat-lbl">Erros</div></div>
+        </div>` : '<div class="modal-absent">Sem dados para este teste.</div>';
+
+      const descEntries = appData.descriptors
+        ? appData.descriptors.filter(d => d.student_id === studentId && d.test_id === testId)
+            .filter(d => parseInt(d.erros) > 0)
+            .sort((a, b) => parseInt(b.erros) - parseInt(a.erros))
+        : [];
+
+      const maxErros = descEntries.length ? parseInt(descEntries[0].erros) : 1;
+      const descHtml = descEntries.length ? `
+        <div class="modal-section-title">Descritores com mais erros</div>
+        ${descEntries.map(d => `
+          <div class="modal-descriptor-row">
+            <div class="modal-descriptor-name">${d.descriptor}</div>
+            <div class="modal-descriptor-bar-wrap"><div class="modal-descriptor-bar" style="width:${Math.round(parseInt(d.erros)/maxErros*100)}%"></div></div>
+            <div class="modal-descriptor-count">${d.erros}/${d.total_questoes}</div>
+          </div>`).join('')}` : '';
+
+      body.innerHTML = stats + descHtml;
     }
 
     function closeProfile() {
