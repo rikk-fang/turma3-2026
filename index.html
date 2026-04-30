@@ -190,6 +190,14 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
     .print-btn:hover { background: #f0f0f0; }
     body.dark .print-btn { background: #2a2a2a; color: #e0e0e0; border-color: #444; }
     body.dark .print-btn:hover { background: #333; }
+    .padrao-tabs { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; margin: 1rem 0 1.25rem; width: fit-content; }
+    .padrao-tab { padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: #666; border: none; transition: background 0.15s, color 0.15s; }
+    .padrao-tab.active { background: #1a1a1a; color: #fff; }
+    .padrao-tab:not(:last-child) { border-right: 1px solid #ddd; }
+    body.dark .padrao-tabs { border-color: #444; background: #2a2a2a; }
+    body.dark .padrao-tab { background: #2a2a2a; color: #aaa; }
+    body.dark .padrao-tab.active { background: #e0e0e0; color: #1a1a1a; }
+    body.dark .padrao-tab:not(:last-child) { border-color: #444; }
   </style>
 </head>
 <body>
@@ -267,15 +275,24 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
         </div>
         <p class="chart-note">Média de Nota e Theta por teste ao longo da série. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
       </div>
-      <div id="tab-padrao" style="display:none;">
-        <div class="test-selector" style="margin-top:1rem;">
-          <label>Teste:</label>
-          <select id="padrao-test-select" onchange="renderPadrao()"></select>
+<div id="tab-padrao" style="display:none;">
+        <div class="padrao-tabs" style="margin-top:1rem;">
+          <button class="padrao-tab active" onclick="setPadraoTab('gabarito')">Gabarito</button>
+          <button class="padrao-tab" onclick="setPadraoTab('descritores')">Descritores</button>
         </div>
-        <div id="padrao-table-wrap"></div>
-        <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
-          <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor — turma</div>
-          <div id="padrao-desc-bars"></div>
+        <div id="padrao-gabarito">
+          <div class="test-selector">
+            <label>Teste:</label>
+            <select id="padrao-test-select" onchange="renderPadrao()"></select>
+          </div>
+          <div id="padrao-table-wrap"></div>
+          <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
+            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor — turma</div>
+            <div id="padrao-desc-bars"></div>
+          </div>
+        </div>
+        <div id="padrao-descritores" style="display:none;">
+          <div id="descritores-table-wrap" style="margin-top:1rem;"></div>
         </div>
       </div>
       <div id="tab-progresso" style="display:none;">
@@ -316,7 +333,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
   </div>
 
   <script>
-   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2ALwsorEthBfSo1oszDCwPVFRe8tT5jnZr8c64uS9R91ES-xX6zRJmR1hVX8LzePLRg/exec';
+   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO08boZy6KGAcwH02ekMHbB-9xfGd7OYZbpf93SYptHhE9WjybSJ_XpWQz32x1ElxXZQ/exec';
 
     const TIERS = [
       { id: 'S', label: 'S', name: 'Desejável',   min: 306, max: 500 },
@@ -964,6 +981,28 @@ if (savedTheme === 'dark') {
       const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
       document.getElementById('print-footer').textContent = 'By Fang and Claw 2026 — ' + now;
       window.print();
+    }
+    function setPadraoTab(tab) {
+      document.getElementById('padrao-gabarito').style.display = tab === 'gabarito' ? 'block' : 'none';
+      document.getElementById('padrao-descritores').style.display = tab === 'descritores' ? 'block' : 'none';
+      document.querySelectorAll('.padrao-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['gabarito', 'descritores'][i] === tab);
+      });
+      if (tab === 'descritores') renderDescritores();
+    }
+
+    function renderDescritores() {
+      const wrap = document.getElementById('descritores-table-wrap');
+      if (!wrap) return;
+      const pool = appData.descriptorsPool || [];
+      if (!pool.length) {
+        wrap.innerHTML = '<div class="no-data">Nenhum descritor disponível.</div>';
+        return;
+      }
+      const rows = pool.map(d =>
+        '<tr><td><strong>' + (d.code || '—') + '</strong></td><td>' + (d.description || '—') + '</td></tr>'
+      ).join('');
+      wrap.innerHTML = '<div style="overflow-x:auto;"><table class="padrao-table"><thead><tr><th>Código</th><th>Descritor</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     init();
   </script>
