@@ -519,12 +519,14 @@ if (tab === 'progresso') renderChart();
       const selRow = document.getElementById('test-selector-row');
       const testSel = document.getElementById('test-select');
 
-      if (isLatest && appData.tests.length > 1) {
+      const scopeTests = getTestsForScope();
+
+      if (isLatest && scopeTests.length > 1) {
         selRow.style.display = 'flex';
         const prev = testSel.value;
-        testSel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
-        if (prev && appData.tests.find(t => t.id === prev)) testSel.value = prev;
-        else testSel.value = getLatestTestId();
+        testSel.innerHTML = scopeTests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
+        if (prev && scopeTests.find(t => t.id === prev)) testSel.value = prev;
+        else testSel.value = scopeTests[scopeTests.length - 1].id;
       } else {
         selRow.style.display = 'none';
       }
@@ -534,8 +536,7 @@ if (tab === 'progresso') renderChart();
         return uiState.classFilter === 'all' || turma === uiState.classFilter;
       });
 
-      const testId = isLatest ? getSelectedTestId() : null;
-      const tierMap = { S: [], A: [], B: [], C: [] };
+      const testId = isLatest ? (testSel && testSel.value ? testSel.value : scopeTests[scopeTests.length - 1].id) : null;      const tierMap = { S: [], A: [], B: [], C: [] };
 
       for (const s of students) {
         const tier = isLatest ? getStudentTierForTest(s.id, testId) : getStudentOverallTier(s.id);
@@ -568,11 +569,12 @@ if (tab === 'progresso') renderChart();
         return uiState.rosterClass === 'all' || turma === uiState.rosterClass;
       });
 
-      if (!students.length) { wrap.innerHTML = '<div class="no-data">Nenhum aluno encontrado.</div>'; return; }
+     if (!students.length) { wrap.innerHTML = '<div class="no-data">Nenhum aluno encontrado.</div>'; return; }
 
-      const testHeaders = appData.tests.map(t => '<th>' + getTestLabel(t) + '</th>').join('');
+      const scopeTests = getTestsForScope();
+      const testHeaders = scopeTests.map(t => '<th>' + getTestLabel(t) + '</th>').join('');
       const rows = students.map(s => {
-        const testCells = appData.tests.map(t => {
+        const testCells = scopeTests.map(t => {
           const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
           if (!entry) return '<td style="color:#ccc;text-align:center;">—</td>';
           const tier = entry.override || scoreToTier(parseFloat(entry.score));
@@ -594,7 +596,8 @@ if (tab === 'progresso') renderChart();
         return;
       }
 
-     const labels = appData.tests.map(t => getTestLabel(t));
+const scopeTests = getTestsForScope();
+      const labels = scopeTests.map(t => getTestLabel(t));
       const palette = ['#1a1a1a','#e63946','#2a9d8f','#e9c46a','#f4a261','#264653','#8338ec','#06d6a0','#fb8500','#023047'];
       let datasets = [];
 
@@ -602,7 +605,7 @@ if (tab === 'progresso') renderChart();
         const classes = uiState.chartClass === 'all' ? ['A', 'B'] : [uiState.chartClass];
         classes.forEach((cls, ci) => {
           const students = appData.students.filter(s => getTurmaFromId(s.id) === cls);
-          const data = appData.tests.map(t => {
+          const data = scopeTests.map(t => {
             const scores = students
               .map(s => { const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id); return e ? parseFloat(e.score) : null; })
               .filter(v => v !== null && !isNaN(v));
@@ -615,7 +618,7 @@ if (tab === 'progresso') renderChart();
         uiState.selectedStudents.forEach((sid, i) => {
           const s = appData.students.find(st => st.id === sid);
           if (!s) return;
-          const data = appData.tests.map(t => {
+         const data = scopeTests.map(t => {
             const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
             return e ? parseFloat(e.score) : null;
           });
@@ -990,8 +993,9 @@ function openProfile(studentId) {
         cls === 'all' || getTurmaFromId(s.id) === cls
       );
 
-      const latestTest = getLatestTestId();
-      const firstTest = appData.tests.length ? appData.tests[0].id : null;
+     const scopeTests = getTestsForScope();
+      const latestTest = scopeTests.length ? scopeTests[scopeTests.length - 1].id : null;
+      const firstTest = getGrowthAnchorTest(scopeTests) ? getGrowthAnchorTest(scopeTests).id : null;
 
       // top 5 by current theta
       const byTheta = students
