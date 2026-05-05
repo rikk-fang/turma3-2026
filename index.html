@@ -227,7 +227,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
         <button class="main-tab" onclick="setMainTab('ranking')">Ranking</button>
       </div>
 
-      <div id="tab-tierlist">
+     <div id="tab-tierlist">
         <div class="controls">
           <div class="tab-group" id="view-tabs">
             <button class="tab active" onclick="setView('latest')">Último teste</button>
@@ -238,6 +238,8 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
             <button class="tab" onclick="setClass('A')">Turma A</button>
             <button class="tab" onclick="setClass('B')">Turma B</button>
           </div>
+          <select id="cycle-select-tierlist" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+          </select>
         </div>
         <div id="test-selector-row" class="test-selector" style="display:none;">
           <label>Teste:</label>
@@ -254,18 +256,22 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
             <button class="tab" onclick="setRosterClass('A')">Turma A</button>
             <button class="tab" onclick="setRosterClass('B')">Turma B</button>
           </div>
+          <select id="cycle-select-alunos" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+          </select>
         </div>
         <button class="print-btn" onclick="printRoster()">⎙ Imprimir</button>
         <div id="roster-table-wrap"></div>
         <div class="print-footer" id="print-footer"></div>
       </div>
-      <div id="tab-ranking" style="display:none;">
+    <div id="tab-ranking" style="display:none;">
         <div class="controls" style="margin-top:1rem;">
           <div class="tab-group" id="ranking-class-tabs">
             <button class="tab active" onclick="setRankingClass('all')">Geral</button>
             <button class="tab" onclick="setRankingClass('A')">Turma A</button>
             <button class="tab" onclick="setRankingClass('B')">Turma B</button>
           </div>
+          <select id="cycle-select-ranking" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+          </select>
         </div>
         <div class="ranking-wrap" id="ranking-wrap"></div>
       </div>
@@ -295,7 +301,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
           <div id="descritores-table-wrap" style="margin-top:1rem;"></div>
         </div>
       </div>
-      <div id="tab-progresso" style="display:none;">
+     <div id="tab-progresso" style="display:none;">
         <div class="controls">
           <div class="tab-group" id="chart-mode-tabs">
             <button class="tab active" onclick="setChartMode('class')">Por turma</button>
@@ -306,8 +312,10 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
             <button class="tab" onclick="setChartClass('A')">Turma A</button>
             <button class="tab" onclick="setChartClass('B')">Turma B</button>
           </div>
+          <select id="cycle-select-progresso" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+          </select>
         </div>
-        <div id="individual-selector" style="display:none;">
+       <div id="individual-selector" style="display:none;">
           <p style="font-size:12px;color:#888;margin-bottom:8px;">Selecione alunos para comparar:</p>
           <div class="student-selector" id="student-chips"></div>
         </div>
@@ -385,9 +393,50 @@ let uiState = {
       chartMode: 'class',
       chartClass: 'all',
       selectedStudents: [],
-      rankingClass: 'all'
-
+      rankingClass: 'all',
+      cycle: 'all'
     };
+
+    function getTestsForScope() {
+      if (uiState.cycle === 'all') return appData.tests;
+      return appData.tests.filter(t => String(t.cycle) === String(uiState.cycle));
+    }
+
+function getGrowthAnchorTest(tests) {
+      return tests.find(t =>
+        appData.scores.some(s =>
+          s.test_id === t.id && s.theta && s.theta !== '' &&
+          !isNaN(parseFloat(s.theta.toString().replace(',', '.')))
+        )
+      ) || null;
+    }
+
+    function getCycleOptions() {
+      const cycles = [...new Set(appData.tests.map(t => t.cycle).filter(c => c !== undefined && c !== ''))].sort();
+      return cycles;
+    }
+
+    function populateCycleSelects() {
+      const cycles = getCycleOptions();
+      const options = '<option value="all">Todos os ciclos</option>' +
+        cycles.map(c => '<option value="' + c + '">' + (c === '0' ? 'Ciclo 0 — Diagnóstico' : 'Ciclo ' + c) + '</option>').join('');
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.innerHTML = options; el.value = uiState.cycle; }
+      });
+    }
+
+    function setCycle(c) {
+      uiState.cycle = c;
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = c;
+      });
+      renderTierList();
+      renderRoster();
+      if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+      if (document.getElementById('tab-ranking').style.display !== 'none') renderRanking();
+    }
 
     let progressChart = null;
 
@@ -650,8 +699,9 @@ if (tab === 'progresso') renderChart();
         return;
       }
 
-      document.getElementById('main-app').style.display = 'block';
+ document.getElementById('main-app').style.display = 'block';
       updateLastRefreshed();
+      populateCycleSelects();
       renderTierList();
       renderRoster();
       setTimeout(autoRefresh, REFRESH_INTERVAL);
