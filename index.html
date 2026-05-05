@@ -888,24 +888,25 @@ function openProfile(studentId) {
         const student = appData.students.find(s => s.id === d.student_id);
         return student && getTurmaFromId(student.id) === descClassFilter;
       }) : [];
-      const descMap = {};
+const descMap = {};
       for (const d of descData) {
-        if (!descMap[d.descriptor]) descMap[d.descriptor] = { erros: 0, total: 0 };
+        if (!descMap[d.descriptor]) descMap[d.descriptor] = { erros: 0, total: 0, students: new Set() };
         descMap[d.descriptor].erros += parseInt(d.erros) || 0;
         descMap[d.descriptor].total += parseInt(d.total_questoes) || 0;
+        descMap[d.descriptor].students.add(d.student_id);
       }
       const descSorted = Object.entries(descMap)
-        .map(([desc, v]) => ({ desc, pct: v.total ? v.erros / v.total : 0, erros: v.erros, total: v.total }))
+        .map(([desc, v]) => ({ desc, pct: v.total ? v.erros / v.total : 0, erros: v.erros, total: v.total, nStudents: v.students.size }))
         .sort((a, b) => b.pct - a.pct);
 
       if (!descSorted.length) {
         descWrap.innerHTML = '<div class="no-data">Sem dados de erro por descritor.</div>';
       } else {
-        descWrap.innerHTML = descSorted.map(d =>
+descWrap.innerHTML = descSorted.map(d =>
           '<div class="desc-error-row">' +
           '<div class="desc-error-name">' + d.desc + '</div>' +
           '<div class="desc-error-bar-wrap"><div class="desc-error-bar" style="width:' + Math.round(d.pct * 100) + '%"></div></div>' +
-          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '%</div>' +
+          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '% <span style="color:#bbb;font-size:11px;">(' + d.erros + '/' + d.nStudents + ')</span></div>' +
           '</div>'
         ).join('');
       }
