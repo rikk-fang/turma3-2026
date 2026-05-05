@@ -1,6 +1,6 @@
 <!--
   Tier List de Proficiência modelo SAEPE
-  By Fang and Claw 2026 v2.0 
+  By Fang and Claw 2026 v2.5 
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -292,8 +292,13 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
             <select id="padrao-test-select" onchange="renderPadrao()"></select>
           </div>
           <div id="padrao-table-wrap"></div>
-          <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
-            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor — turma</div>
+<div id="padrao-desc-wrap" style="margin-top:1.5rem;">
+            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor</div>
+            <div class="tab-group" id="padrao-desc-class-tabs" style="margin-bottom:1rem;">
+              <button class="tab active" onclick="setPadraoDescClass('all')">Todas</button>
+              <button class="tab" onclick="setPadraoDescClass('A')">Turma A</button>
+              <button class="tab" onclick="setPadraoDescClass('B')">Turma B</button>
+            </div>
             <div id="padrao-desc-bars"></div>
           </div>
         </div>
@@ -336,7 +341,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
     </div>
     
     <footer>
-      By Fang and Claw 2026 &mdash; v2.0 2026
+      By Fang and Claw 2026 &mdash; v2.5 2026
     </footer>
   </div>
 
@@ -394,7 +399,8 @@ let uiState = {
       chartClass: 'all',
       selectedStudents: [],
       rankingClass: 'all',
-      cycle: 'all'
+      cycle: 'all',
+      padraoDescClass: 'all'
     };
 
     function getTestsForScope() {
@@ -873,9 +879,15 @@ function openProfile(studentId) {
           '</tr></thead><tbody>' + rows + '</tbody></table></div>';
       }
 
-      // descriptor error bars
+    // descriptor error bars
       const descWrap = document.getElementById('padrao-desc-bars');
-      const descData = appData.descriptors ? appData.descriptors.filter(d => d.test_id === testId) : [];
+      const descClassFilter = uiState.padraoDescClass || 'all';
+      const descData = appData.descriptors ? appData.descriptors.filter(d => {
+        if (d.test_id !== testId) return false;
+        if (descClassFilter === 'all') return true;
+        const student = appData.students.find(s => s.id === d.student_id);
+        return student && getTurmaFromId(student.id) === descClassFilter;
+      }) : [];
       const descMap = {};
       for (const d of descData) {
         if (!descMap[d.descriptor]) descMap[d.descriptor] = { erros: 0, total: 0 };
@@ -1052,6 +1064,13 @@ function openProfile(studentId) {
       const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
       document.getElementById('print-footer').textContent = 'By Fang and Claw 2026 — ' + now;
       window.print();
+    }
+    function setPadraoDescClass(c) {
+      uiState.padraoDescClass = c;
+      document.querySelectorAll('#padrao-desc-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderPadrao();
     }
     function setPadraoTab(tab) {
       document.getElementById('padrao-gabarito').style.display = tab === 'gabarito' ? 'block' : 'none';
