@@ -160,7 +160,7 @@ body.dark .test-selector select { background: #2a2a2a; color: #e0e0e0; border-co
     body.dark .padrao-table th { background: #222; color: #888; border-color: #444; }
     body.dark .padrao-table td { border-color: #333; color: #e0e0e0; }
     body.dark .padrao-table tr:hover td { background: #333; }
-    .ranking-wrap { margin-top: 1rem; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .ranking-wrap { margin-top: 1rem; display: flex; flex-direction: column; gap: 1.5rem; }
     .ranking-block { flex: 1; min-width: 280px; background: #fff; border-radius: 10px; border: 1px solid #eee; overflow: hidden; }
     .ranking-block-title { font-size: 13px; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #eee; background: #fafafa; color: #444; }
     .ranking-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
@@ -895,9 +895,9 @@ const descMap = {};
         descMap[d.descriptor].total += parseInt(d.total_questoes) || 0;
         descMap[d.descriptor].students.add(d.student_id);
       }
-      const descSorted = Object.entries(descMap)
+const descSorted = Object.entries(descMap)
         .map(([desc, v]) => ({ desc, pct: v.total ? v.erros / v.total : 0, erros: v.erros, total: v.total, nStudents: v.students.size }))
-        .sort((a, b) => b.pct - a.pct);
+        .sort((a, b) => b.pct - a.pct || b.erros - a.erros);
 
       if (!descSorted.length) {
         descWrap.innerHTML = '<div class="no-data">Sem dados de erro por descritor.</div>';
@@ -1020,13 +1020,27 @@ descWrap.innerHTML = descSorted.map(d =>
         .sort((a, b) => b.theta - a.theta)
         .slice(0, 5);
 
-      // top 5 by growth (latest theta - first theta)
+// top 5 by growth (latest theta - first theta)
       const byGrowth = students
         .map(s => {
           const first = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === firstTest);
           const latest = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
           const delta = (first && latest && first.theta && latest.theta)
             ? parseFloat(latest.theta) - parseFloat(first.theta)
+            : null;
+          return { student: s, delta };
+        })
+        .filter(x => x.delta !== null)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+
+      // top 5 by nota growth (latest score - first score)
+      const byNotaGrowth = students
+        .map(s => {
+          const first = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === firstTest);
+          const latest = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          const delta = (first && latest && first.score && latest.score)
+            ? parseFloat(latest.score.toString().replace(',', '.')) - parseFloat(first.score.toString().replace(',', '.'))
             : null;
           return { student: s, delta };
         })
@@ -1051,14 +1065,18 @@ descWrap.innerHTML = descSorted.map(d =>
         ).join('');
       }
 
-      wrap.innerHTML =
+     wrap.innerHTML =
         '<div class="ranking-block">' +
         '<div class="ranking-block-title">🏆 Top 5 — Melhor Theta atual</div>' +
         rankingRows(byTheta, x => x.theta.toFixed(4), '') +
         '</div>' +
         '<div class="ranking-block">' +
-        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento</div>' +
+        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento em Theta</div>' +
         rankingRows(byGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(4), 'ranking-val-growth') +
+        '</div>' +
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">📊 Top 5 — Maior crescimento em Nota</div>' +
+        rankingRows(byNotaGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(1), 'ranking-val-growth') +
         '</div>';
     }
     function printRoster() {
