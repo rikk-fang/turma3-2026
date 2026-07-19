@@ -1,0 +1,1157 @@
+<!--
+  Tier List de Proficiência modelo SAEPE
+  By Fang and Claw 2026 v2.5 
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tier List de Proficiência</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #f7f6f2;
+      --bg-card: #ffffff;
+      --ink: #1a2e28;
+      --ink-soft: #66645c;
+      --ink-muted: #8a8878;
+      --border-soft: #e5e2d8;
+      --border-strong: #ddd9cd;
+      --accent: #0d6e5e;
+      --accent-bg: #e1f5ee;
+      --tier-s: #0a5344; --tier-s-bg: #d6f0e4; --tier-s-border: #0d6e5e;
+      --tier-a: #6b5200; --tier-a-bg: #fdeab5; --tier-a-border: #d9a800;
+      --tier-b: #a04b0c; --tier-b-bg: #fdece0; --tier-b-border: #d9691e;
+      --tier-c: #8a1414; --tier-c-bg: #fbdcdc; --tier-c-border: #c62828;
+    }
+    body.dark {
+      --bg-page: #14181a;
+      --bg-card: #262c2b;
+      --ink: #ede9e0;
+      --ink-soft: #a8a596;
+      --ink-muted: #7a7768;
+      --border-soft: #3a413c;
+      --border-strong: #454c46;
+      --accent: #4dd6b0;
+      --accent-bg: #1b3d36;
+      --tier-s: #7bebc4; --tier-s-bg: #1e463a; --tier-s-border: #4dd6b0;
+      --tier-a: #f5d581; --tier-a-bg: #453a1a; --tier-a-border: #d9a800;
+      --tier-b: #f5b788; --tier-b-bg: #45301c; --tier-b-border: #d9691e;
+      --tier-c: #f5a0a0; --tier-c-bg: #452020; --tier-c-border: #d9433a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Archivo', system-ui, -apple-system, sans-serif; background: var(--bg-page); color: var(--ink); min-height: 100vh; }
+
+    #loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 14px; color: var(--ink-muted); }
+
+    #site-off-view { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; gap: 12px; }
+    #site-off-view h2 { font-size: 22px; font-weight: 700; color: var(--ink-soft); }
+    #site-off-view p { font-size: 14px; color: var(--ink-muted); }
+
+    #app { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 14px; color: var(--ink-soft); margin-bottom: 1.25rem; }
+
+    #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; margin-bottom: 4px; }
+    #refresh-btn:hover { background: var(--accent-bg); }
+    #last-updated { font-size: 11px; color: var(--ink-muted); margin-left: 8px; }
+
+    .main-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong); overflow-x: auto; overflow-y: hidden; margin: 1rem 0 1.25rem; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .main-tabs::-webkit-scrollbar { display: none; }
+    .main-tab { padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--ink-soft); border: none; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; transition: color 0.15s, border-color 0.15s; }
+    .main-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .tab-group { display: flex; border-radius: 20px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border-soft); }
+    .tab { padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--ink-soft); border: none; transition: background 0.15s, color 0.15s; }
+    .tab.active { background: var(--accent); color: #fff; }
+    .tab:not(:last-child) { border-right: 1px solid var(--border-soft); }
+
+    .test-selector { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+    .test-selector label { font-size: 13px; color: var(--ink-soft); }
+    .test-selector select { font-size: 13px; padding: 6px 10px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--bg-card); color: var(--ink); }
+
+    .stats-bar { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .stat-card { background: var(--bg-card); border-radius: 10px; padding: 10px 14px; flex: 1; min-width: 80px; border: 1px solid var(--border-soft); }
+    .stat-card-top { display: flex; align-items: baseline; gap: 8px; }
+    .stat-card-badge { font-size: 15px; font-weight: 800; width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+    .stat-val { font-size: 22px; font-weight: 800; color: var(--ink); }
+    .stat-lbl { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+    .stat-card-S { border-color: var(--tier-s-border); background: var(--tier-s-bg); }
+    .stat-card-S .stat-card-badge { background: var(--tier-s-border); color: #fff; }
+    .stat-card-S .stat-val, .stat-card-S .stat-lbl { color: var(--tier-s); }
+    .stat-card-A { border-color: var(--tier-a-border); background: var(--tier-a-bg); }
+    .stat-card-A .stat-card-badge { background: var(--tier-a-border); color: #fff; }
+    .stat-card-A .stat-val, .stat-card-A .stat-lbl { color: var(--tier-a); }
+    .stat-card-B { border-color: var(--tier-b-border); background: var(--tier-b-bg); }
+    .stat-card-B .stat-card-badge { background: var(--tier-b-border); color: #fff; }
+    .stat-card-B .stat-val, .stat-card-B .stat-lbl { color: var(--tier-b); }
+    .stat-card-C { border-color: var(--tier-c-border); background: var(--tier-c-bg); }
+    .stat-card-C .stat-card-badge { background: var(--tier-c-border); color: #fff; }
+    .stat-card-C .stat-val, .stat-card-C .stat-lbl { color: var(--tier-c); }
+
+    .tier-row { margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border-soft); overflow: hidden; }
+    .tier-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+    .tier-label { font-size: 26px; font-weight: 800; min-width: 30px; }
+    .tier-name { font-size: 14px; font-weight: 700; }
+    .tier-count { font-size: 12px; color: var(--ink-muted); margin-left: auto; }
+    .tier-body { padding: 10px 14px 14px; display: flex; flex-wrap: wrap; gap: 8px; min-height: 44px; background: var(--bg-card); }
+    .student-card { padding: 8px 14px; border-radius: 0 8px 8px 0; font-size: 13px; font-weight: 500; border-left: 3px solid; background: var(--bg-page); }
+    .empty-tier { font-size: 13px; color: var(--ink-muted); padding: 4px 0; font-style: italic; }
+
+    .tier-S .tier-header { background: var(--tier-s-bg); }
+    .tier-S .tier-label, .tier-S .tier-name, .tier-S .tier-count { color: var(--tier-s); }
+    .tier-S .student-card { border-left-color: var(--tier-s-border); }
+    .tier-A .tier-header { background: var(--tier-a-bg); }
+    .tier-A .tier-label, .tier-A .tier-name, .tier-A .tier-count { color: var(--tier-a); }
+    .tier-A .student-card { border-left-color: var(--tier-a-border); }
+    .tier-B .tier-header { background: var(--tier-b-bg); }
+    .tier-B .tier-label, .tier-B .tier-name, .tier-B .tier-count { color: var(--tier-b); }
+    .tier-B .student-card { border-left-color: var(--tier-b-border); }
+    .tier-C .tier-header { background: var(--tier-c-bg); }
+    .tier-C .tier-label, .tier-C .tier-name, .tier-C .tier-count { color: var(--tier-c); }
+    .tier-C .student-card { border-left-color: var(--tier-c-border); }
+
+    .roster-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-soft); }
+    .roster-table th { font-size: 12px; font-weight: 700; color: var(--ink-muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-soft); background: var(--bg-page); }
+    .roster-table td { font-size: 13px; padding: 9px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+    .roster-table tr:last-child td { border-bottom: none; }
+    .roster-table tr:hover td { background: var(--bg-page); }
+    .roster-table th:first-child, .roster-table td:first-child {
+      position: sticky; left: 0; z-index: 2;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+    }
+    .roster-table th:first-child { background: var(--bg-page); z-index: 3; }
+    .roster-table td:first-child { background: var(--bg-card); font-weight: 500; }
+    .roster-table tr:hover td:first-child { background: var(--bg-page); }
+    #roster-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+    .tier-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-S { background: var(--tier-s-bg); color: var(--tier-s); }
+    .badge-A { background: var(--tier-a-bg); color: var(--tier-a); }
+    .badge-B { background: var(--tier-b-bg); color: var(--tier-b); }
+    .badge-C { background: var(--tier-c-bg); color: var(--tier-c); }
+    .badge-none { background: var(--border-soft); color: var(--ink-muted); }
+
+    .chart-wrap { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border-soft); padding: 1.25rem; margin-bottom: 1rem; }
+    .student-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+    .student-chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-soft); background: var(--bg-card); color: var(--ink-soft); transition: all 0.15s; }
+    .student-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .no-data { text-align: center; padding: 3rem; font-size: 14px; color: var(--ink-muted); }
+    .chart-note { font-size: 11px; color: var(--ink-muted); text-align: center; margin-top: 8px; }
+
+    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border-strong); text-align: center; font-size: 12px; color: var(--ink-muted); }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--bg-card); color: var(--ink); border-radius: 12px; padding: 1.5rem;
+      max-width: 480px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative;
+      animation: modal-pop 0.18s ease-out;
+    }
+    @keyframes modal-pop {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (max-width: 640px) {
+      .modal-overlay { align-items: flex-end; }
+      .modal-box {
+        width: 100%; max-width: 100%; max-height: 88vh;
+        border-radius: 16px 16px 0 0; padding: 1.25rem 1.25rem 1.75rem;
+        animation: modal-slide-up 0.22s ease-out;
+      }
+      .modal-box::before {
+        content: ''; display: block; width: 36px; height: 4px; border-radius: 2px;
+        background: var(--border-strong); margin: 0 auto 1rem;
+      }
+      @keyframes modal-slide-up {
+        from { opacity: 0; transform: translateY(100%); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    }
+    .modal-close { position: absolute; top: 12px; right: 14px; font-size: 18px; cursor: pointer; color: var(--ink-muted); background: none; border: none; }
+    .modal-name { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .modal-turma { font-size: 13px; color: var(--ink-soft); margin-bottom: 1rem; }
+    .modal-absent { font-size: 14px; color: var(--ink-muted); font-style: italic; padding: 1rem 0; }
+    .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+    .modal-stat { background: var(--bg-page); border-radius: 8px; padding: 10px 12px; }
+    .modal-stat-val { font-size: 18px; font-weight: 700; }
+    .modal-stat-lbl { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+    .modal-section-title { font-size: 12px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .modal-descriptor-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .modal-descriptor-name { font-size: 13px; flex: 1; }
+    .modal-descriptor-bar-wrap { flex: 2; background: var(--border-soft); border-radius: 4px; height: 8px; overflow: hidden; }
+    .modal-descriptor-bar { height: 8px; border-radius: 4px; background: var(--tier-c-border); }
+    .modal-descriptor-count { font-size: 12px; color: var(--ink-muted); min-width: 36px; text-align: right; }
+    .student-card { cursor: pointer; transition: opacity 0.15s; }
+    .student-card:hover { opacity: 0.75; }
+    .padrao-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-soft); margin-top: 1rem; }
+    .padrao-table th { font-size: 12px; font-weight: 700; color: var(--ink-muted); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border-soft); background: var(--bg-page); cursor: help; }
+    .padrao-table td { font-size: 13px; padding: 9px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+    .padrao-table tr:last-child td { border-bottom: none; }
+    .padrao-table tr:hover td { background: var(--bg-page); }
+    .complexidade-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-elementar1 { background: var(--tier-c-bg); color: var(--tier-c); }
+    .badge-elementar2 { background: var(--tier-b-bg); color: var(--tier-b); }
+    .badge-basico { background: var(--tier-a-bg); color: var(--tier-a); }
+    .badge-desejavel { background: var(--tier-s-bg); color: var(--tier-s); }
+    .desc-error-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .desc-error-name { font-size: 13px; flex: 1; }
+    .desc-error-bar-wrap { flex: 2; background: var(--border-soft); border-radius: 4px; height: 8px; overflow: hidden; }
+    .desc-error-bar { height: 8px; border-radius: 4px; background: var(--tier-c-border); }
+    .desc-error-pct { font-size: 12px; color: var(--ink-muted); min-width: 36px; text-align: right; }
+    .ranking-wrap { margin-top: 1rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .ranking-block { flex: 1; min-width: 280px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border-soft); overflow: hidden; }
+    .ranking-block-title { font-size: 13px; font-weight: 700; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); background: var(--bg-page); color: var(--ink-soft); }
+    .ranking-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-soft); cursor: pointer; transition: background 0.15s; }
+    .ranking-row:last-child { border-bottom: none; }
+    .ranking-row:hover { background: var(--bg-page); }
+    .ranking-pos { font-size: 20px; font-weight: 800; min-width: 28px; text-align: center; }
+    .ranking-pos-1 { color: #f9a825; }
+    .ranking-pos-2 { color: #90a4ae; }
+    .ranking-pos-3 { color: #a1887f; }
+    .ranking-pos-4, .ranking-pos-5 { color: var(--ink-muted); }
+    .ranking-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .ranking-turma { font-size: 11px; color: var(--ink-muted); }
+    .ranking-val { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .ranking-val-growth { color: var(--accent); }
+    @media print {
+      body * { visibility: hidden; }
+      #roster-table-wrap, #roster-table-wrap * { visibility: visible; }
+      #roster-table-wrap { position: absolute; top: 0; left: 0; width: 100%; }
+      .print-footer { visibility: visible; position: fixed; bottom: 0; left: 0; width: 100%; text-align: center; font-size: 11px; color: var(--ink-muted); padding: 8px; }
+    }
+    .print-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
+    .print-btn:hover { background: var(--accent-bg); }
+    .padrao-tabs { display: flex; border-radius: 20px; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border-soft); margin: 1rem 0 1.25rem; width: fit-content; }
+    .padrao-tab { padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--ink-soft); border: none; transition: background 0.15s, color 0.15s; }
+    .padrao-tab.active { background: var(--accent); color: #fff; }
+    .padrao-tab:not(:last-child) { border-right: 1px solid var(--border-soft); }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">Carregando...</div>
+
+  <div id="site-off-view" style="display:none;">
+    <h2>Fora do ar</h2>
+    <p>Esta página está temporariamente indisponível.<br>Volte em breve.</p>
+  </div>
+
+  <div id="main-app" style="display:none;">
+    <div id="app">
+      <h1>Tier List de Proficiência</h1>
+      <p class="subtitle">Desempenho dos alunos por turma ou visão geral</p>
+
+      <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
+      <button id="theme-btn" onclick="toggleTheme()">☾ Escuro</button>
+      <span id="last-updated"></span>
+
+      <div class="main-tabs">
+        <button class="main-tab active" onclick="setMainTab('tierlist')">Tier List</button>
+        <button class="main-tab" onclick="setMainTab('alunos')">Alunos</button>
+        <button class="main-tab" onclick="setMainTab('progresso')">Progresso</button>
+        <button class="main-tab" onclick="setMainTab('padrao')">Padrão de Teste</button>
+        <button class="main-tab" onclick="setMainTab('evolucao')">Evolução</button>
+        <button class="main-tab" onclick="setMainTab('ranking')">Ranking</button>
+      </div>
+
+     <div id="tab-tierlist">
+        <div class="controls">
+          <div class="tab-group" id="view-tabs">
+            <button class="tab active" onclick="setView('latest')">Último teste</button>
+            <button class="tab" onclick="setView('overall')">Geral</button>
+          </div>
+          <div class="tab-group" id="class-tabs">
+            <button class="tab active" onclick="setClass('all')">Todas</button>
+            <button class="tab" onclick="setClass('A')">Turma A</button>
+            <button class="tab" onclick="setClass('B')">Turma B</button>
+          </div>
+          <select id="cycle-select-tierlist" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+        </div>
+        <div id="test-selector-row" class="test-selector" style="display:none;">
+          <label>Teste:</label>
+          <select id="test-select" onchange="renderTierList()"></select>
+        </div>
+        <div id="stats-bar"></div>
+        <div id="tier-list"></div>
+      </div>
+
+      <div id="tab-alunos" style="display:none;">
+        <div class="controls">
+          <div class="tab-group" id="roster-class-tabs">
+            <button class="tab active" onclick="setRosterClass('all')">Todas</button>
+            <button class="tab" onclick="setRosterClass('A')">Turma A</button>
+            <button class="tab" onclick="setRosterClass('B')">Turma B</button>
+          </div>
+          <select id="cycle-select-alunos" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+        </div>
+        <button class="print-btn" onclick="printRoster()">⎙ Imprimir</button>
+        <div id="roster-table-wrap"></div>
+        <div class="print-footer" id="print-footer"></div>
+      </div>
+    <div id="tab-ranking" style="display:none;">
+        <div class="controls" style="margin-top:1rem;">
+          <div class="tab-group" id="ranking-class-tabs">
+            <button class="tab active" onclick="setRankingClass('all')">Geral</button>
+            <button class="tab" onclick="setRankingClass('A')">Turma A</button>
+            <button class="tab" onclick="setRankingClass('B')">Turma B</button>
+          </div>
+          <select id="cycle-select-ranking" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+        </div>
+        <div class="ranking-wrap" id="ranking-wrap"></div>
+      </div>
+      <div id="tab-evolucao" style="display:none;">
+        <div class="chart-wrap" style="margin-top:1rem;">
+          <canvas id="evolucao-chart"></canvas>
+        </div>
+        <p class="chart-note">Média de Nota e Theta por teste ao longo da série. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+      </div>
+<div id="tab-padrao" style="display:none;">
+        <div class="padrao-tabs" style="margin-top:1rem;">
+          <button class="padrao-tab active" onclick="setPadraoTab('gabarito')">Gabarito</button>
+          <button class="padrao-tab" onclick="setPadraoTab('descritores')">Descritores</button>
+        </div>
+        <div id="padrao-gabarito">
+          <div class="test-selector">
+            <label>Teste:</label>
+            <select id="padrao-test-select" onchange="renderPadrao()"></select>
+          </div>
+          <div id="padrao-table-wrap"></div>
+<div id="padrao-desc-wrap" style="margin-top:1.5rem;">
+            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor</div>
+            <div class="tab-group" id="padrao-desc-class-tabs" style="margin-bottom:1rem;">
+              <button class="tab active" onclick="setPadraoDescClass('all')">Todas</button>
+              <button class="tab" onclick="setPadraoDescClass('A')">Turma A</button>
+              <button class="tab" onclick="setPadraoDescClass('B')">Turma B</button>
+            </div>
+            <div id="padrao-desc-bars"></div>
+          </div>
+        </div>
+        <div id="padrao-descritores" style="display:none;">
+          <div id="descritores-table-wrap" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+     <div id="tab-progresso" style="display:none;">
+        <div class="controls">
+          <div class="tab-group" id="chart-mode-tabs">
+            <button class="tab active" onclick="setChartMode('class')">Por turma</button>
+            <button class="tab" onclick="setChartMode('individual')">Individual</button>
+          </div>
+          <div class="tab-group" id="chart-class-tabs">
+            <button class="tab active" onclick="setChartClass('all')">Todas</button>
+            <button class="tab" onclick="setChartClass('A')">Turma A</button>
+            <button class="tab" onclick="setChartClass('B')">Turma B</button>
+          </div>
+          <select id="cycle-select-progresso" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+        </div>
+       <div id="individual-selector" style="display:none;">
+          <p style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">Selecione alunos para comparar:</p>
+          <div class="student-selector" id="student-chips"></div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="progress-chart"></canvas>
+        </div>
+        <p class="chart-note">Médias por teste. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+      </div>
+
+    </div>
+<div class="modal-overlay" id="profile-modal">
+      <div class="modal-box">
+        <button class="modal-close" onclick="closeProfile()">✕</button>
+        <div class="modal-name" id="modal-name"></div>
+        <div class="modal-turma" id="modal-turma"></div>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+    
+    <footer>
+      By Fang and Claw 2026 &mdash; v2.5 2026
+    </footer>
+  </div>
+
+  <script>
+   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyO08boZy6KGAcwH02ekMHbB-9xfGd7OYZbpf93SYptHhE9WjybSJ_XpWQz32x1ElxXZQ/exec';
+
+    const TIERS = [
+      { id: 'S', label: 'S', name: 'Desejável',   min: 306, max: 500 },
+      { id: 'A', label: 'A', name: 'Básico',       min: 271, max: 305 },
+      { id: 'B', label: 'B', name: 'Elementar II', min: 226, max: 270 },
+      { id: 'C', label: 'C', name: 'Elementar I',  min: 0,   max: 225 },
+    ];
+
+    let appData = { students: [], tests: [], scores: [], online: true };
+
+    async function fetchData() {
+      try {
+        const res = await fetch(SCRIPT_URL + '?action=getData');
+        const json = await res.json();
+        appData = json;
+        return true;
+      } catch(e) {
+        console.error('Erro ao buscar dados:', e);
+        return false;
+      }
+    }
+
+    function scoreToTier(score) {
+      for (const t of TIERS) {
+        if (score >= t.min && score <= t.max) return t.id;
+      }
+      return 'C';
+    }
+
+    function getStudentTierForTest(studentId, testId) {
+      const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === testId);
+      if (!entry) return null;
+      return entry.override || scoreToTier(parseFloat(entry.score));
+    }
+
+    function getStudentOverallTier(studentId) {
+      const entries = appData.scores.filter(s => s.student_id === studentId);
+      if (!entries.length) return null;
+      const relevant = entries.filter(e => !isNaN(parseFloat(e.score)));
+      if (!relevant.length) return null;
+      const avg = relevant.reduce((a, b) => a + parseFloat(b.score), 0) / relevant.length;
+      return scoreToTier(Math.round(avg));
+    }
+
+let uiState = {
+      view: 'latest',
+      classFilter: 'all',
+      rosterClass: 'all',
+      chartMode: 'class',
+      chartClass: 'all',
+      selectedStudents: [],
+      rankingClass: 'all',
+      cycle: 'all',
+      padraoDescClass: 'all'
+    };
+
+    function getTestsForScope() {
+      if (uiState.cycle === 'all') return appData.tests;
+      return appData.tests.filter(t => String(t.cycle) === String(uiState.cycle));
+    }
+
+function getGrowthAnchorTest(tests) {
+      return tests.find(t =>
+        appData.scores.some(s =>
+          s.test_id === t.id && s.theta && s.theta !== '' &&
+          !isNaN(parseFloat(s.theta.toString().replace(',', '.')))
+        )
+      ) || null;
+    }
+
+    function getCycleOptions() {
+      const cycles = [...new Set(appData.tests.map(t => t.cycle).filter(c => c !== undefined && c !== ''))].sort();
+      return cycles;
+    }
+
+    function populateCycleSelects() {
+      const cycles = getCycleOptions();
+      const options = '<option value="all">Todos os ciclos</option>' +
+        cycles.map(c => '<option value="' + c + '">' + (c === '0' ? 'Ciclo 0 — Diagnóstico' : 'Ciclo ' + c) + '</option>').join('');
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.innerHTML = options; el.value = uiState.cycle; }
+      });
+    }
+
+    function setCycle(c) {
+      uiState.cycle = c;
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = c;
+      });
+      renderTierList();
+      renderRoster();
+      if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+      if (document.getElementById('tab-ranking').style.display !== 'none') renderRanking();
+    }
+
+    let progressChart = null;
+
+    function setMainTab(tab) {
+      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'].forEach(t => {
+        document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+      });
+     document.querySelectorAll('.main-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'][i] === tab);
+      });
+if (tab === 'progresso') renderChart();
+      if (tab === 'alunos') renderRoster();
+      if (tab === 'padrao') renderPadrao();
+    if (tab === 'evolucao') renderEvolucao();
+    if (tab === 'ranking') renderRanking();
+    }
+
+    function setView(v) {
+      uiState.view = v;
+      document.querySelectorAll('#view-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['latest', 'overall'][i] === v);
+      });
+      renderTierList();
+    }
+
+    function setClass(c) {
+      uiState.classFilter = c;
+      document.querySelectorAll('#class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderTierList();
+    }
+
+    function setRosterClass(c) {
+      uiState.rosterClass = c;
+      document.querySelectorAll('#roster-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderRoster();
+    }
+
+    function setChartMode(m) {
+      uiState.chartMode = m;
+      document.querySelectorAll('#chart-mode-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['class', 'individual'][i] === m);
+      });
+      document.getElementById('individual-selector').style.display = m === 'individual' ? 'block' : 'none';
+      document.getElementById('chart-class-tabs').style.display = m === 'class' ? 'flex' : 'none';
+      if (m === 'individual') renderStudentChips();
+      renderChart();
+    }
+
+    function setChartClass(c) {
+      uiState.chartClass = c;
+      document.querySelectorAll('#chart-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderChart();
+    }
+
+      function getLatestTestId() {
+        return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
+      }
+      
+      function getSelectedTestId() {
+        const sel = document.getElementById('test-select');
+        return sel && sel.value ? sel.value : getLatestTestId();
+      }
+      
+      function getTurmaFromId(studentId) {
+        return studentId.startsWith('3A') ? 'A' : 'B';
+      }
+      
+      function getTestLabel(test) {
+        return test.date ? test.name + ' — ' + test.date : test.name;
+      }
+      
+      function renderTierList() {
+      const isLatest = uiState.view === 'latest';
+      const selRow = document.getElementById('test-selector-row');
+      const testSel = document.getElementById('test-select');
+
+      const scopeTests = getTestsForScope();
+
+      if (isLatest && scopeTests.length > 1) {
+        selRow.style.display = 'flex';
+        const prev = testSel.value;
+        testSel.innerHTML = scopeTests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
+        if (prev && scopeTests.find(t => t.id === prev)) testSel.value = prev;
+        else testSel.value = scopeTests[scopeTests.length - 1].id;
+      } else {
+        selRow.style.display = 'none';
+      }
+
+      const students = appData.students.filter(s => {
+        const turma = getTurmaFromId(s.id);
+        return uiState.classFilter === 'all' || turma === uiState.classFilter;
+      });
+
+      const testId = isLatest ? (testSel && testSel.value ? testSel.value : scopeTests[scopeTests.length - 1].id) : null;      const tierMap = { S: [], A: [], B: [], C: [] };
+
+      for (const s of students) {
+        const tier = isLatest ? getStudentTierForTest(s.id, testId) : getStudentOverallTier(s.id);
+        if (tier && tierMap[tier]) tierMap[tier].push(s);
+      }
+
+      const placed = Object.values(tierMap).flat().length;
+      const statsBar = document.getElementById('stats-bar');
+      statsBar.innerHTML = TIERS.map(t => {
+        const count = tierMap[t.id].length;
+        const pct = placed ? Math.round(count / placed * 100) : 0;
+        return '<div class="stat-card stat-card-' + t.id + '"><div class="stat-card-top"><span class="stat-card-badge">' + t.label + '</span><span class="stat-val">' + count + '</span></div><div class="stat-lbl">' + t.name + ' (' + pct + '%)</div></div>';
+      }).join('') + '<div class="stat-card"><div class="stat-val">' + students.length + '</div><div class="stat-lbl">Total de alunos</div></div>';
+
+      document.getElementById('tier-list').innerHTML = TIERS.map(t => {
+        const list = tierMap[t.id];
+        const cards = list.length
+       ? list.map(s => '<div class="student-card" onclick="openProfile(\'' + s.id + '\')">' + s.name + '</div>').join('')
+          : '<span class="empty-tier">nenhum aluno neste nível</span>';
+        return '<div class="tier-row tier-' + t.id + '">' +
+          '<div class="tier-header"><span class="tier-label">' + t.label + '</span><span class="tier-name">' + t.name + '</span><span class="tier-count">' + list.length + ' aluno' + (list.length !== 1 ? 's' : '') + '</span></div>' +
+          '<div class="tier-body">' + cards + '</div></div>';
+      }).join('');
+    }
+
+    function renderRoster() {
+      const wrap = document.getElementById('roster-table-wrap');
+      const students = appData.students.filter(s => {
+        const turma = getTurmaFromId(s.id);
+        return uiState.rosterClass === 'all' || turma === uiState.rosterClass;
+      });
+
+     if (!students.length) { wrap.innerHTML = '<div class="no-data">Nenhum aluno encontrado.</div>'; return; }
+
+      const scopeTests = getTestsForScope();
+      const testHeaders = scopeTests.map(t => '<th>' + getTestLabel(t) + '</th>').join('');
+      const rows = students.map(s => {
+        const testCells = scopeTests.map(t => {
+          const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+          if (!entry) return '<td style="color:#ccc;text-align:center;">—</td>';
+          const tier = entry.override || scoreToTier(parseFloat(entry.score));
+          return '<td style="text-align:center;"><span class="tier-badge badge-' + tier + '">' + entry.score + '</span></td>';
+        }).join('');
+     const overallTier = getStudentOverallTier(s.id);
+        return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
+          '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + TIERS.find(t => t.id === overallTier).name + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
+      }).join('');
+
+      wrap.innerHTML = '<table class="roster-table"><thead><tr><th>Nome</th><th>Turma</th>' + testHeaders + '<th>Geral</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function cssVar(name) {
+      return getComputedStyle(document.body).getPropertyValue(name).trim();
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById('progress-chart');
+      if (!canvas) return;
+      if (!appData.tests.length) {
+        document.getElementById('chart-wrap').innerHTML = '<div class="no-data">Nenhum teste disponível ainda.</div>';
+        return;
+      }
+
+const scopeTests = getTestsForScope();
+      const labels = scopeTests.map(t => getTestLabel(t));
+      const palette = [cssVar('--ink'), cssVar('--accent'), '#e9c46a', '#f4a261', '#8338ec', '#06d6a0', '#fb8500', '#023047', '#d62828', '#6a4c93'];
+      let datasets = [];
+
+      if (uiState.chartMode === 'class') {
+        const classes = uiState.chartClass === 'all' ? ['A', 'B'] : [uiState.chartClass];
+        classes.forEach((cls, ci) => {
+          const students = appData.students.filter(s => getTurmaFromId(s.id) === cls);
+          const data = scopeTests.map(t => {
+            const scores = students
+              .map(s => { const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id); return e ? parseFloat(e.score) : null; })
+              .filter(v => v !== null && !isNaN(v));
+            return scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+          });
+          datasets.push({ label: 'Turma ' + cls, data, borderColor: palette[ci], backgroundColor: palette[ci] + '22', tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false });
+        });
+      } else {
+        if (!uiState.selectedStudents.length) return;
+        uiState.selectedStudents.forEach((sid, i) => {
+          const s = appData.students.find(st => st.id === sid);
+          if (!s) return;
+         const data = scopeTests.map(t => {
+            const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+            return e ? parseFloat(e.score) : null;
+          });
+          datasets.push({ label: s.name, data, borderColor: palette[i % palette.length], backgroundColor: palette[i % palette.length] + '22', tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false });
+        });
+      }
+
+      if (progressChart) { progressChart.destroy(); progressChart = null; }
+      const ctx = canvas.getContext('2d');
+      progressChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } }
+          },
+          scales: {
+            y: { min: 0, max: 500, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
+            x: { ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'refLines',
+          afterDraw(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xLeft = chart.chartArea.left;
+            const xRight = chart.chartArea.right;
+            [{ val: 306, label: 'Desejável', color: cssVar('--tier-s-border') },
+             { val: 271, label: 'Básico', color: cssVar('--tier-a-border') },
+             { val: 226, label: 'El. II', color: cssVar('--tier-b-border') }].forEach(ref => {
+              const y = yAxis.getPixelForValue(ref.val);
+              ctx.save();
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 1;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath(); ctx.moveTo(xLeft, y); ctx.lineTo(xRight, y); ctx.stroke();
+              ctx.fillStyle = ref.color;
+              ctx.font = '10px Archivo, system-ui';
+              ctx.fillText(ref.label, xRight + 4, y + 4);
+              ctx.restore();
+            });
+          }
+        }]
+      });
+    }
+
+    function renderStudentChips() {
+      const wrap = document.getElementById('student-chips');
+      if (!wrap) return;
+      const students = appData.students.slice().sort((a, b) => a.name.localeCompare(b.name));
+      wrap.innerHTML = students.map(s =>
+        '<div class="student-chip' + (uiState.selectedStudents.includes(s.id) ? ' selected' : '') + '" onclick="toggleChip(\'' + s.id + '\')">' + s.name + ' (' + getTurmaFromId(s.id) + ')</div>'
+      ).join('');
+    }
+
+    function toggleChip(sid) {
+      const idx = uiState.selectedStudents.indexOf(sid);
+      if (idx >= 0) uiState.selectedStudents.splice(idx, 1);
+      else uiState.selectedStudents.push(sid);
+      renderStudentChips();
+      renderChart();
+    }
+
+    const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+
+    async function init() {
+      const success = await fetchData();
+      document.getElementById('loading-screen').style.display = 'none';
+
+      if (!success) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        document.getElementById('site-off-view').querySelector('p').textContent = 'Erro ao carregar dados. Verifique sua conexão.';
+        return;
+      }
+
+      if (!appData.online) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        return;
+      }
+
+ document.getElementById('main-app').style.display = 'block';
+      updateLastRefreshed();
+      populateCycleSelects();
+      renderTierList();
+      renderRoster();
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    async function autoRefresh() {
+      await fetchData();
+      if (appData.online) {
+        renderTierList();
+        renderRoster();
+        if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+        updateLastRefreshed();
+      }
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    async function refreshData() {
+      const btn = document.getElementById('refresh-btn');
+      btn.textContent = '↻ Atualizando...';
+      btn.disabled = true;
+      const success = await fetchData();
+      if (success) {
+        renderTierList();
+        renderRoster();
+        if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+        updateLastRefreshed();
+      } else {
+        alert('Erro ao atualizar. Verifique sua conexão.');
+      }
+      btn.textContent = '↻ Atualizar';
+      btn.disabled = false;
+    }
+
+    function updateLastRefreshed() {
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isDark ? '○ Claro' : '☾ Escuro';
+  if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
+  if (document.getElementById('tab-evolucao').style.display !== 'none') renderEvolucao();
+}
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark');
+  document.getElementById('theme-btn').textContent = '○ Claro';
+}
+function openProfile(studentId) {
+      const student = appData.students.find(s => s.id === studentId);
+      if (!student) return;
+      const turma = getTurmaFromId(studentId);
+      document.getElementById('modal-name').textContent = student.name;
+      document.getElementById('modal-turma').textContent = 'Turma ' + turma;
+
+      const testsWithData = appData.tests.filter(t =>
+        appData.scores.some(s => s.student_id === studentId && s.test_id === t.id)
+      );
+
+      const latestTest = getLatestTestId();
+      const selectorHtml = testsWithData.length > 1 ? `
+        <div style="margin-bottom:1rem;">
+          <select id="modal-test-select" onchange="renderProfileBody('${studentId}', this.value)"
+            style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);width:100%;">
+            ${testsWithData.map(t => `<option value="${t.id}" ${t.id === latestTest ? 'selected' : ''}>${getTestLabel(t)}</option>`).join('')}
+          </select>
+        </div>` : '';
+
+      document.getElementById('modal-body').innerHTML = selectorHtml + '<div id="modal-profile-body"></div>';
+      renderProfileBody(studentId, latestTest);
+      document.getElementById('profile-modal').classList.add('open');
+    }
+
+    function renderProfileBody(studentId, testId) {
+      const body = document.getElementById('modal-profile-body');
+      if (!body) return;
+
+      const isAbsent = appData.absent && appData.absent.includes(studentId);
+      if (isAbsent) {
+        body.innerHTML = '<div class="modal-absent">Aluno ausente neste teste.</div>';
+        return;
+      }
+
+      const entry = appData.scores.find(s => s.student_id === studentId && s.test_id === testId);
+      const stats = entry ? `
+        <div class="modal-stats">
+          <div class="modal-stat"><div class="modal-stat-val">${entry.score}</div><div class="modal-stat-lbl">Nota</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.nivel || '—'}</div><div class="modal-stat-lbl">Nível</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.theta || '—'}</div><div class="modal-stat-lbl">Theta</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.se_eap || '—'}</div><div class="modal-stat-lbl">SE</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.incoerencias || '0'}</div><div class="modal-stat-lbl">Incoerências</div></div>
+          <div class="modal-stat"><div class="modal-stat-val">${entry.total_mistakes || '—'}</div><div class="modal-stat-lbl">Erros</div></div>
+        </div>` : '<div class="modal-absent">Sem dados para este teste.</div>';
+
+      const descEntries = appData.descriptors
+        ? appData.descriptors.filter(d => d.student_id === studentId && d.test_id === testId)
+            .filter(d => parseInt(d.erros) > 0)
+            .sort((a, b) => parseInt(b.erros) - parseInt(a.erros))
+        : [];
+
+      const maxErros = descEntries.length ? parseInt(descEntries[0].erros) : 1;
+      const descHtml = descEntries.length ? `
+        <div class="modal-section-title">Descritores com mais erros</div>
+        ${descEntries.map(d => `
+          <div class="modal-descriptor-row">
+            <div class="modal-descriptor-name">${d.descriptor}</div>
+            <div class="modal-descriptor-bar-wrap"><div class="modal-descriptor-bar" style="width:${Math.round(parseInt(d.erros)/maxErros*100)}%"></div></div>
+            <div class="modal-descriptor-count">${d.erros}/${d.total_questoes}</div>
+          </div>`).join('')}` : '';
+
+      body.innerHTML = stats + descHtml;
+    }
+
+    function closeProfile() {
+      document.getElementById('profile-modal').classList.remove('open');
+    }
+
+    document.getElementById('profile-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeProfile();
+    });
+    function renderPadrao() {
+      const sel = document.getElementById('padrao-test-select');
+      if (!sel) return;
+
+      const prev = sel.value;
+      sel.innerHTML = appData.tests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
+      if (prev && appData.tests.find(t => t.id === prev)) sel.value = prev;
+      else sel.value = getLatestTestId();
+
+      const testId = sel.value;
+      const items = appData.testModel ? appData.testModel.filter(i => i.test_id === testId) : [];
+      const wrap = document.getElementById('padrao-table-wrap');
+
+      const tooltips = {
+        item:         'Número da questão na prova',
+        gabarito:     'Alternativa correta entre os distratores',
+        descriptor:   'Habilidade esperada na resolução do item, limitada à matriz SAEPE',
+        complexity:   'Classificação do item na escala: Elementar I, Elementar II, Básico ou Desejável',
+        ancoragem:    'Intervalo de -2,0 a 2,0 que representa a dificuldade do item no cálculo TRI'
+      };
+
+      function complexBadge(c) {
+        const map = {
+          'ELEMENTAR I':  'badge-elementar1',
+          'ELEMENTAR II': 'badge-elementar2',
+          'BÁSICO':       'badge-basico',
+          'DESEJÁVEL':    'badge-desejavel',
+        };
+        const cls = map[c ? c.toUpperCase() : ''] || 'badge-none';
+        return '<span class="complexidade-badge ' + cls + '">' + (c || '—') + '</span>';
+      }
+
+      if (!items.length) {
+        wrap.innerHTML = '<div class="no-data">Nenhum dado de modelo disponível para este teste.</div>';
+      } else {
+        const rows = items.map(i =>
+          '<tr><td>' + (i.item || '—') + '</td><td><strong>' + (i.gabarito || '—') + '</strong></td><td>' + (i.descriptor || '—') + '</td><td>' + complexBadge(i.complexity) + '</td><td>' + (i.ancoragem || '—') + '</td></tr>'
+        ).join('');
+
+        wrap.innerHTML = '<div style="overflow-x:auto;"><table class="padrao-table"><thead><tr>' +
+          '<th title="' + tooltips.item + '">Item</th>' +
+          '<th title="' + tooltips.gabarito + '">Gabarito</th>' +
+          '<th title="' + tooltips.descriptor + '">Descritor</th>' +
+          '<th title="' + tooltips.complexity + '">Complexidade</th>' +
+          '<th title="' + tooltips.ancoragem + '">Ancoragem</th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+      }
+
+    // descriptor error bars
+      const descWrap = document.getElementById('padrao-desc-bars');
+      const descClassFilter = uiState.padraoDescClass || 'all';
+      const descData = appData.descriptors ? appData.descriptors.filter(d => {
+        if (d.test_id !== testId) return false;
+        if (descClassFilter === 'all') return true;
+        const student = appData.students.find(s => s.id === d.student_id);
+        return student && getTurmaFromId(student.id) === descClassFilter;
+      }) : [];
+const descMap = {};
+      for (const d of descData) {
+        if (!descMap[d.descriptor]) descMap[d.descriptor] = { erros: 0, total: 0, students: new Set() };
+        descMap[d.descriptor].erros += parseInt(d.erros) || 0;
+        descMap[d.descriptor].total += parseInt(d.total_questoes) || 0;
+        descMap[d.descriptor].students.add(d.student_id);
+      }
+const descSorted = Object.entries(descMap)
+        .map(([desc, v]) => ({ desc, pct: v.total ? v.erros / v.total : 0, erros: v.erros, total: v.total, nStudents: v.students.size }))
+        .sort((a, b) => b.pct - a.pct || b.erros - a.erros);
+
+      if (!descSorted.length) {
+        descWrap.innerHTML = '<div class="no-data">Sem dados de erro por descritor.</div>';
+      } else {
+descWrap.innerHTML = descSorted.map(d =>
+          '<div class="desc-error-row">' +
+          '<div class="desc-error-name">' + d.desc + '</div>' +
+          '<div class="desc-error-bar-wrap"><div class="desc-error-bar" style="width:' + Math.round(d.pct * 100) + '%"></div></div>' +
+          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '% <span style="color:#bbb;font-size:11px;">(' + d.erros + '/' + d.nStudents + ')</span></div>' +
+          '</div>'
+        ).join('');
+      }
+    }
+    let evolucaoChart = null;
+
+    function renderEvolucao() {
+      const canvas = document.getElementById('evolucao-chart');
+      if (!canvas) return;
+      if (!appData.tests.length) return;
+
+      const labels = appData.tests.map(t => getTestLabel(t));
+      const notaData = appData.tests.map(t => t.mean_nota ? parseFloat(t.mean_nota) : null);
+      const thetaData = appData.tests.map(t => t.mean_theta ? parseFloat(t.mean_theta) : null);
+
+      const datasets = [
+        {
+          label: 'Média Nota',
+          data: notaData,
+          borderColor: cssVar('--ink'),
+          backgroundColor: cssVar('--ink') + '22',
+          tension: 0.3,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: false,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Média Theta (×50+250)',
+          data: thetaData.map(v => v !== null ? Math.round(250 + 50 * v) : null),
+          borderColor: cssVar('--accent'),
+          backgroundColor: cssVar('--accent') + '22',
+          tension: 0.3,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          fill: false,
+          borderDash: [5, 5],
+          yAxisID: 'y'
+        }
+      ];
+
+      if (evolucaoChart) { evolucaoChart.destroy(); evolucaoChart = null; }
+      const ctx = canvas.getContext('2d');
+      evolucaoChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } }
+          },
+          scales: {
+            y: { min: 0, max: 500, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
+            x: { ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'evolucaoRefLines',
+          afterDraw(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xLeft = chart.chartArea.left;
+            const xRight = chart.chartArea.right;
+            [{ val: 306, label: 'Desejável', color: cssVar('--tier-s-border') },
+             { val: 271, label: 'Básico', color: cssVar('--tier-a-border') },
+             { val: 226, label: 'El. II', color: cssVar('--tier-b-border') }].forEach(ref => {
+              const y = yAxis.getPixelForValue(ref.val);
+              ctx.save();
+              ctx.strokeStyle = ref.color;
+              ctx.lineWidth = 1;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath(); ctx.moveTo(xLeft, y); ctx.lineTo(xRight, y); ctx.stroke();
+              ctx.fillStyle = ref.color;
+              ctx.font = '10px Archivo, system-ui';
+              ctx.fillText(ref.label, xRight + 4, y + 4);
+              ctx.restore();
+            });
+          }
+        }]
+      });
+    }
+    function setRankingClass(c) {
+      uiState.rankingClass = c;
+      document.querySelectorAll('#ranking-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderRanking();
+    }
+
+    function renderRanking() {
+      const wrap = document.getElementById('ranking-wrap');
+      if (!wrap) return;
+
+      const cls = uiState.rankingClass || 'all';
+      const students = appData.students.filter(s =>
+        cls === 'all' || getTurmaFromId(s.id) === cls
+      );
+
+     const scopeTests = getTestsForScope();
+      const latestTest = scopeTests.length ? scopeTests[scopeTests.length - 1].id : null;
+      const firstTest = getGrowthAnchorTest(scopeTests) ? getGrowthAnchorTest(scopeTests).id : null;
+
+      // top 5 by current theta
+      const byTheta = students
+        .map(s => {
+          const entry = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          return { student: s, theta: entry && entry.theta ? parseFloat(entry.theta) : null };
+        })
+        .filter(x => x.theta !== null)
+        .sort((a, b) => b.theta - a.theta)
+        .slice(0, 5);
+
+// top 5 by growth (latest theta - first theta)
+      const byGrowth = students
+        .map(s => {
+          const first = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === firstTest);
+          const latest = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          const delta = (first && latest && first.theta && latest.theta)
+            ? parseFloat(latest.theta) - parseFloat(first.theta)
+            : null;
+          return { student: s, delta };
+        })
+        .filter(x => x.delta !== null)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+
+      // top 5 by nota growth (latest score - first score)
+      const byNotaGrowth = students
+        .map(s => {
+          const first = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === firstTest);
+          const latest = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === latestTest);
+          const delta = (first && latest && first.score && latest.score)
+            ? parseFloat(latest.score.toString().replace(',', '.')) - parseFloat(first.score.toString().replace(',', '.'))
+            : null;
+          return { student: s, delta };
+        })
+        .filter(x => x.delta !== null)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+
+      function posLabel(i) {
+        const medals = ['🥇', '🥈', '🥉', '4º', '5º'];
+        return medals[i] || (i + 1) + 'º';
+      }
+
+      function rankingRows(list, valFn, valClass) {
+        if (!list.length) return '<div class="no-data">Sem dados suficientes.</div>';
+        return list.map((x, i) =>
+          '<div class="ranking-row" onclick="openProfile(\'' + x.student.id + '\')">' +
+          '<div class="ranking-pos ranking-pos-' + (i + 1) + '">' + posLabel(i) + '</div>' +
+          '<div><div class="ranking-name">' + x.student.name + '</div>' +
+          '<div class="ranking-turma">Turma ' + getTurmaFromId(x.student.id) + '</div></div>' +
+          '<div class="ranking-val ' + valClass + '">' + valFn(x) + '</div>' +
+          '</div>'
+        ).join('');
+      }
+
+     wrap.innerHTML =
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">🏆 Top 5 — Melhor Theta atual</div>' +
+        rankingRows(byTheta, x => x.theta.toFixed(4), '') +
+        '</div>' +
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento em Theta</div>' +
+        rankingRows(byGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(4), 'ranking-val-growth') +
+        '</div>' +
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">📊 Top 5 — Maior crescimento em Nota</div>' +
+        rankingRows(byNotaGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(1), 'ranking-val-growth') +
+        '</div>';
+    }
+    function printRoster() {
+      const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      document.getElementById('print-footer').textContent = 'By Fang and Claw 2026 — ' + now;
+      window.print();
+    }
+    function setPadraoDescClass(c) {
+      uiState.padraoDescClass = c;
+      document.querySelectorAll('#padrao-desc-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderPadrao();
+    }
+    function setPadraoTab(tab) {
+      document.getElementById('padrao-gabarito').style.display = tab === 'gabarito' ? 'block' : 'none';
+      document.getElementById('padrao-descritores').style.display = tab === 'descritores' ? 'block' : 'none';
+      document.querySelectorAll('.padrao-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['gabarito', 'descritores'][i] === tab);
+      });
+      if (tab === 'descritores') renderDescritores();
+    }
+
+    function renderDescritores() {
+      const wrap = document.getElementById('descritores-table-wrap');
+      if (!wrap) return;
+      const pool = appData.descriptorsPool || [];
+      if (!pool.length) {
+        wrap.innerHTML = '<div class="no-data">Nenhum descritor disponível.</div>';
+        return;
+      }
+      const rows = pool.map(d =>
+        '<tr><td><strong>' + (d.code || '—') + '</strong></td><td>' + (d.description || '—') + '</td></tr>'
+      ).join('');
+      wrap.innerHTML = '<div style="overflow-x:auto;"><table class="padrao-table"><thead><tr><th>Código</th><th>Descritor</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+    init();
+  </script>
+
+</body>
+</html>
