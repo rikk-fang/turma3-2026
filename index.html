@@ -1131,18 +1131,22 @@ const scopeTests = getTestsForScope();
         ).join('');
       }
 
-     wrap.innerHTML =
+wrap.innerHTML =
         '<div class="ranking-block">' +
         '<div class="ranking-block-title">🏆 Top 5 — Melhor Theta atual</div>' +
         rankingRows(byTheta, x => x.theta.toFixed(4), '') +
         '</div>' +
         '<div class="ranking-block">' +
-        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento em Theta</div>' +
-        rankingRows(byGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(4), 'ranking-val-growth') +
+        '<div class="ranking-block-title">🔥 Top 5 — Maior crescimento desde o último teste</div>' +
+        rankingRows(byRecentGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(1), 'ranking-val-growth') +
         '</div>' +
         '<div class="ranking-block">' +
-        '<div class="ranking-block-title">📊 Top 5 — Maior crescimento em Nota</div>' +
-        rankingRows(byNotaGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(1), 'ranking-val-growth') +
+        '<div class="ranking-block-title">📈 Top 5 — Maior crescimento total</div>' +
+        rankingRows(byTotalGrowth, x => (x.delta >= 0 ? '+' : '') + x.delta.toFixed(1), 'ranking-val-growth') +
+        '</div>' +
+        '<div class="ranking-block">' +
+        '<div class="ranking-block-title">🚀 Top 5 — Maior salto no ranking</div>' +
+        rankingRows(byRankJump, x => '+' + x.delta + ' posições', 'ranking-val-growth') +
         '</div>';
     }
     function printRoster() {
