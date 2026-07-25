@@ -256,6 +256,7 @@
         <button class="main-tab" onclick="setMainTab('padrao')">Padrão de Teste</button>
         <button class="main-tab" onclick="setMainTab('evolucao')">Evolução</button>
         <button class="main-tab" onclick="setMainTab('ranking')">Ranking</button>
+        <button class="main-tab" onclick="setMainTab('trajetoria')">Trajetória</button>
       </div>
 
      <div id="tab-tierlist">
@@ -358,7 +359,30 @@
         <div class="chart-wrap">
           <canvas id="progress-chart"></canvas>
         </div>
-        <p class="chart-note">Médias por teste. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+<p class="chart-note">Médias por teste. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
+      </div>
+
+      <div id="tab-trajetoria" style="display:none;">
+        <div class="controls">
+          <div class="tab-group" id="trajetoria-mode-tabs">
+            <button class="tab active" onclick="setTrajetoriaMode('class')">Por turma</button>
+            <button class="tab" onclick="setTrajetoriaMode('individual')">Individual</button>
+          </div>
+          <select id="trajetoria-student-select" onchange="setTrajetoriaStudent(this.value)" style="display:none;font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+            <option value="">Selecione um aluno...</option>
+          </select>
+          <select id="cycle-select-trajetoria" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+          <div class="tab-group" id="trajetoria-method-tabs">
+            <button class="tab active" onclick="setTrajetoriaMethod('regression')">Regressão</button>
+            <button class="tab" onclick="setTrajetoriaMethod('extrapolation')">Extrapolação</button>
+          </div>
+        </div>
+        <div id="trajetoria-empty" class="no-data" style="display:none;">Selecione um aluno para ver a trajetória.</div>
+        <div class="chart-wrap" id="trajetoria-chart-wrap">
+          <canvas id="trajetoria-chart"></canvas>
+        </div>
+        <p class="chart-note">Linhas sólidas: valores reais. Linhas tracejadas: projeção anterior ao teste. Baixa confiança (menos de 3 testes anteriores) aparece mais clara.</p>
       </div>
 
     </div>
@@ -421,7 +445,67 @@
       const avg = relevant.reduce((a, b) => a + parseFloat(b.score), 0) / relevant.length;
       return scoreToTier(Math.round(avg));
     }
+// ── Trajetória: projection math ──────────────────────────────
 
+function getStudentSeries(studentId, tests, metric) {
+  // metric: 'theta' or 'score' (nota)
+  const series = [];
+  tests.forEach((t, idx) => {
+    const entry = appData.scores.find(sc => sc.student_id === studentId && sc.test_id === t.id);
+    if (!entry) return;
+    const raw = entry[metric];
+    if (raw === undefined || raw === null || raw === '') return;
+    const val = parseFloat(raw.toString().replace(',', '.'));
+    if (isNaN(val)) return;
+    series.push({ x: idx, y: val, testId: t.id });
+  });
+  return series;
+}
+
+function linearRegressionProject(points) {
+  const n = points.length;
+  if (n < 1) return null;
+  if (n === 1) {
+    // Can't fit a slope from one point — flat carry-forward as fallback.
+    return points[0].y;
+  }
+  const sumX = points.reduce((a, p) => a + p.x, 0);
+  const sumY = points.reduce((a, p) => a + p.y, 0);
+  const sumXY = points.reduce((a, p) => a + p.x * p.y, 0);
+  const sumXX = points.reduce((a, p) => a + p.x * p.x, 0);
+  const denom = n * sumXX - sumX * sumX;
+  if (denom === 0) return points[points.length - 1].y;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  const nextX = points[points.length - 1].x + 1;
+  return slope * nextX + intercept;
+}
+
+function twoPointExtrapolate(points) {
+  const n = points.length;
+  if (n < 1) return null;
+  if (n === 1) return points[0].y;
+  const p1 = points[n - 2];
+  const p2 = points[n - 1];
+  const slope = p2.x !== p1.x ? (p2.y - p1.y) / (p2.x - p1.x) : 0;
+  return p2.y + slope * 1;
+}
+
+function getProjectionForTest(series, testIndex, method) {
+  // series: full ordered [{x, y, testId}] for a student
+  // testIndex: the x-position we want a projection FOR (uses only points with x < testIndex)
+  const prior = series.filter(p => p.x < testIndex);
+  if (!prior.length) return null;
+
+  const projected = method === 'regression'
+    ? linearRegressionProject(prior)
+    : twoPointExtrapolate(prior);
+
+  if (projected === null || isNaN(projected)) return null;
+
+  const confidence = prior.length >= 3 ? 'high' : 'low';
+  return { projected, confidence, priorCount: prior.length };
+}
 let uiState = {
       view: 'latest',
       classFilter: 'all',
@@ -431,7 +515,10 @@ let uiState = {
       selectedStudents: [],
       rankingClass: 'all',
       cycle: 'all',
-      padraoDescClass: 'all'
+      padraoDescClass: 'all',
+      trajetoriaMode: 'class',
+      trajetoriaStudent: '',
+      trajetoriaMethod: 'regression'
     };
 
     function getTestsForScope() {
@@ -457,15 +544,15 @@ function getGrowthAnchorTest(tests) {
       const cycles = getCycleOptions();
       const options = '<option value="all">Todos os ciclos</option>' +
         cycles.map(c => '<option value="' + c + '">' + (c === '0' ? 'Ciclo 0 — Diagnóstico' : 'Ciclo ' + c) + '</option>').join('');
-      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.innerHTML = options; el.value = uiState.cycle; }
       });
     }
 
-    function setCycle(c) {
+function setCycle(c) {
       uiState.cycle = c;
-      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking'].forEach(id => {
+      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = c;
       });
@@ -473,22 +560,23 @@ function getGrowthAnchorTest(tests) {
       renderRoster();
       if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
       if (document.getElementById('tab-ranking').style.display !== 'none') renderRanking();
+      if (document.getElementById('tab-trajetoria').style.display !== 'none') renderTrajetoria();
     }
-
     let progressChart = null;
 
-    function setMainTab(tab) {
-      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'].forEach(t => {
+function setMainTab(tab) {
+      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria'].forEach(t => {
         document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
       });
      document.querySelectorAll('.main-tab').forEach((el, i) => {
-        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking'][i] === tab);
+        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria'][i] === tab);
       });
 if (tab === 'progresso') renderChart();
       if (tab === 'alunos') renderRoster();
       if (tab === 'padrao') renderPadrao();
     if (tab === 'evolucao') renderEvolucao();
     if (tab === 'ranking') renderRanking();
+    if (tab === 'trajetoria') renderTrajetoria();
     }
 
     function setView(v) {
@@ -526,7 +614,7 @@ if (tab === 'progresso') renderChart();
       renderChart();
     }
 
-    function setChartClass(c) {
+   function setChartClass(c) {
       uiState.chartClass = c;
       document.querySelectorAll('#chart-class-tabs .tab').forEach((t, i) => {
         t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
@@ -534,6 +622,39 @@ if (tab === 'progresso') renderChart();
       renderChart();
     }
 
+    function setTrajetoriaMode(m) {
+      uiState.trajetoriaMode = m;
+      document.querySelectorAll('#trajetoria-mode-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['class', 'individual'][i] === m);
+      });
+      const sel = document.getElementById('trajetoria-student-select');
+      if (sel) sel.style.display = m === 'individual' ? 'inline-block' : 'none';
+      if (m === 'individual') populateTrajetoriaStudentSelect();
+      renderTrajetoria();
+    }
+
+    function setTrajetoriaStudent(sid) {
+      uiState.trajetoriaStudent = sid;
+      renderTrajetoria();
+    }
+
+    function setTrajetoriaMethod(m) {
+      uiState.trajetoriaMethod = m;
+      document.querySelectorAll('#trajetoria-method-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['regression', 'extrapolation'][i] === m);
+      });
+      renderTrajetoria();
+    }
+
+    function populateTrajetoriaStudentSelect() {
+      const sel = document.getElementById('trajetoria-student-select');
+      if (!sel) return;
+      const prev = uiState.trajetoriaStudent;
+      const students = appData.students.slice().sort((a, b) => a.name.localeCompare(b.name));
+      sel.innerHTML = '<option value="">Selecione um aluno...</option>' +
+        students.map(s => '<option value="' + s.id + '">' + s.name + ' (' + getTurmaFromId(s.id) + ')</option>').join('');
+      if (prev && students.find(s => s.id === prev)) sel.value = prev;
+    }
       function getLatestTestId() {
         return appData.tests.length ? appData.tests[appData.tests.length - 1].id : null;
       }
@@ -1149,6 +1270,131 @@ wrap.innerHTML =
         rankingRows(byRankJump, x => '+' + x.delta + ' posições', 'ranking-val-growth') +
         '</div>';
     }
+
+    let trajetoriaChart = null;
+
+    function renderTrajetoria() {
+      const canvas = document.getElementById('trajetoria-chart');
+      const emptyEl = document.getElementById('trajetoria-empty');
+      const chartWrap = document.getElementById('trajetoria-chart-wrap');
+      if (!canvas) return;
+
+      const scopeTests = getTestsForScope();
+      if (scopeTests.length < 2) {
+        if (trajetoriaChart) { trajetoriaChart.destroy(); trajetoriaChart = null; }
+        emptyEl.style.display = 'block';
+        emptyEl.textContent = 'Dados insuficientes neste ciclo para calcular trajetória.';
+        chartWrap.style.display = 'none';
+        return;
+      }
+
+      if (uiState.trajetoriaMode === 'individual' && !uiState.trajetoriaStudent) {
+        if (trajetoriaChart) { trajetoriaChart.destroy(); trajetoriaChart = null; }
+        emptyEl.style.display = 'block';
+        emptyEl.textContent = 'Selecione um aluno para ver a trajetória.';
+        chartWrap.style.display = 'none';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+      chartWrap.style.display = 'block';
+
+      const labels = scopeTests.map(t => getTestLabel(t));
+      const method = uiState.trajetoriaMethod === 'extrapolation' ? 'extrapolation' : 'regression';
+      const palette = [cssVar('--ink'), cssVar('--accent'), '#e9c46a', '#f4a261'];
+
+      function buildRealAndProjected(studentIds) {
+        // Averages Nota across the given student ids per test position (or single student).
+        const realSeries = scopeTests.map((t, idx) => {
+          const vals = studentIds
+            .map(sid => {
+              const e = appData.scores.find(sc => sc.student_id === sid && sc.test_id === t.id);
+              return e && e.score ? parseFloat(e.score.toString().replace(',', '.')) : null;
+            })
+            .filter(v => v !== null && !isNaN(v));
+          return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+        });
+
+        // Build a combined "series" of {x, y} for the group average, to project from.
+        const groupPoints = realSeries
+          .map((y, x) => (y !== null ? { x, y } : null))
+          .filter(p => p !== null);
+
+        const projectedSeries = scopeTests.map((t, idx) => {
+          const proj = getProjectionForTest(groupPoints, idx, method);
+          return proj ? proj.projected : null;
+        });
+
+        const confidenceSeries = scopeTests.map((t, idx) => {
+          const proj = getProjectionForTest(groupPoints, idx, method);
+          return proj ? proj.confidence : null;
+        });
+
+        return { realSeries, projectedSeries, confidenceSeries };
+      }
+
+      let datasets = [];
+
+      if (uiState.trajetoriaMode === 'class') {
+        const classes = ['A', 'B'];
+        classes.forEach((cls, ci) => {
+          const studentIds = appData.students.filter(s => getTurmaFromId(s.id) === cls).map(s => s.id);
+          const { realSeries, projectedSeries } = buildRealAndProjected(studentIds);
+          datasets.push({
+            label: 'Turma ' + cls + ' (Real)',
+            data: realSeries,
+            borderColor: palette[ci],
+            backgroundColor: palette[ci] + '22',
+            tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
+          });
+          datasets.push({
+            label: 'Turma ' + cls + ' (Projetado)',
+            data: projectedSeries,
+            borderColor: palette[ci],
+            backgroundColor: palette[ci] + '11',
+            borderDash: [6, 4],
+            tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
+          });
+        });
+      } else {
+        const sid = uiState.trajetoriaStudent;
+        const { realSeries, projectedSeries } = buildRealAndProjected([sid]);
+        datasets.push({
+          label: 'Real',
+          data: realSeries,
+          borderColor: palette[0],
+          backgroundColor: palette[0] + '22',
+          tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
+        });
+        datasets.push({
+          label: 'Projetado',
+          data: projectedSeries,
+          borderColor: palette[1],
+          backgroundColor: palette[1] + '11',
+          borderDash: [6, 4],
+          tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
+        });
+      }
+
+      if (trajetoriaChart) { trajetoriaChart.destroy(); trajetoriaChart = null; }
+      const ctx = canvas.getContext('2d');
+      trajetoriaChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } }
+          },
+          scales: {
+            y: { min: 0, max: 500, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
+            x: { ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
     function printRoster() {
       const now = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
       document.getElementById('print-footer').textContent = 'By Fang and Claw 2026 — ' + now;
