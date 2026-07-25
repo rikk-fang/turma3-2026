@@ -56,9 +56,17 @@
     h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.01em; }
     .subtitle { font-size: 14px; color: var(--ink-soft); margin-bottom: 1.25rem; }
 
-    #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; margin-bottom: 4px; }
+#refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
     #refresh-btn:hover { background: var(--accent-bg); }
-    #last-updated { font-size: 11px; color: var(--ink-muted); margin-left: 8px; }
+    #last-updated { font-size: 11px; color: var(--ink-muted); }
+
+    .app-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+    .app-header-title { min-width: 0; }
+    .app-header-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .app-header { flex-direction: column; align-items: flex-start; }
+      .app-header-controls { flex-wrap: wrap; }
+    }
 
     .main-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-strong); overflow-x: auto; overflow-y: hidden; margin: 1rem 0 1.25rem; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .main-tabs::-webkit-scrollbar { display: none; }
@@ -242,12 +250,17 @@
 
   <div id="main-app" style="display:none;">
     <div id="app">
-      <h1>Tier List de Proficiência</h1>
-      <p class="subtitle">Desempenho dos alunos por turma ou visão geral</p>
-
-      <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
-      <button id="theme-btn" onclick="toggleTheme()">☾ Escuro</button>
-      <span id="last-updated"></span>
+<div class="app-header">
+        <div class="app-header-title">
+          <h1>Tier List de Proficiência</h1>
+          <p class="subtitle">Desempenho dos alunos por turma ou visão geral</p>
+        </div>
+        <div class="app-header-controls">
+          <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
+          <button id="theme-btn" onclick="toggleTheme()">☾ Escuro</button>
+          <span id="last-updated"></span>
+        </div>
+      </div>
 
       <div class="main-tabs">
         <button class="main-tab active" onclick="setMainTab('tierlist')">Tier List</button>
