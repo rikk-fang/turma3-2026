@@ -1312,9 +1312,14 @@ wrap.innerHTML =
       emptyEl.style.display = 'none';
       chartWrap.style.display = 'block';
 
-      const labels = scopeTests.map(t => getTestLabel(t));
+     const labels = scopeTests.map(t => getTestLabel(t));
       const method = uiState.trajetoriaMethod === 'extrapolation' ? 'extrapolation' : 'regression';
-      const palette = [cssVar('--ink'), cssVar('--accent'), '#e9c46a', '#f4a261'];
+      const palette = {
+        realA: cssVar('--ink'),
+        projA: '#c62828',
+        realB: cssVar('--accent'),
+        projB: '#f4a261'
+      };
 
       function buildRealAndProjected(studentIds) {
         // Averages Nota across the given student ids per test position (or single student).
@@ -1348,28 +1353,50 @@ wrap.innerHTML =
 
       let datasets = [];
 
-      if (uiState.trajetoriaMode === 'class') {
-        const classes = ['A', 'B'];
-        classes.forEach((cls, ci) => {
+     if (uiState.trajetoriaMode === 'class') {
+        const classes = [
+          { cls: 'A', real: palette.realA, proj: palette.projA },
+          { cls: 'B', real: palette.realB, proj: palette.projB }
+        ];
+        classes.forEach(({ cls, real, proj }) => {
           const studentIds = appData.students.filter(s => getTurmaFromId(s.id) === cls).map(s => s.id);
           const { realSeries, projectedSeries } = buildRealAndProjected(studentIds);
           datasets.push({
             label: 'Turma ' + cls + ' (Real)',
             data: realSeries,
-            borderColor: palette[ci],
-            backgroundColor: palette[ci] + '22',
+            borderColor: real,
+            backgroundColor: real + '22',
             tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
           });
           datasets.push({
             label: 'Turma ' + cls + ' (Projetado)',
             data: projectedSeries,
-            borderColor: palette[ci],
-            backgroundColor: palette[ci] + '11',
+            borderColor: proj,
+            backgroundColor: proj + '11',
             borderDash: [6, 4],
             tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
           });
         });
       } else {
+        const sid = uiState.trajetoriaStudent;
+        const { realSeries, projectedSeries } = buildRealAndProjected([sid]);
+        datasets.push({
+          label: 'Real',
+          data: realSeries,
+          borderColor: palette.realA,
+          backgroundColor: palette.realA + '22',
+          tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
+        });
+        datasets.push({
+          label: 'Projetado',
+          data: projectedSeries,
+          borderColor: palette.projA,
+          backgroundColor: palette.projA + '11',
+          borderDash: [6, 4],
+          tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
+        });
+      }
+     else {
         const sid = uiState.trajetoriaStudent;
         const { realSeries, projectedSeries } = buildRealAndProjected([sid]);
         datasets.push({
