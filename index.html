@@ -1395,25 +1395,7 @@ wrap.innerHTML =
           borderDash: [6, 4],
           tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
         });
-      }
-     else {
-        const sid = uiState.trajetoriaStudent;
-        const { realSeries, projectedSeries } = buildRealAndProjected([sid]);
-        datasets.push({
-          label: 'Real',
-          data: realSeries,
-          borderColor: palette[0],
-          backgroundColor: palette[0] + '22',
-          tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
-        });
-        datasets.push({
-          label: 'Projetado',
-          data: projectedSeries,
-          borderColor: palette[1],
-          backgroundColor: palette[1] + '11',
-          borderDash: [6, 4],
-          tension: 0.3, pointRadius: 3, pointHoverRadius: 5, fill: false
-        });
+    
       }
 
       if (trajetoriaChart) { trajetoriaChart.destroy(); trajetoriaChart = null; }
