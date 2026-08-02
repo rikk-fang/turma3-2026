@@ -50,6 +50,8 @@
 
     #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
     #refresh-btn:hover { background: var(--accent-bg); }
+    .nav-link-btn { margin-top: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--accent); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
+    .nav-link-btn:hover { background: var(--accent-bg); }
     #last-updated { font-size: 11px; color: var(--ink-muted); }
 
     .app-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
@@ -132,10 +134,10 @@
   <div id="main-app" style="display:none;">
     <div id="app">
       <div class="app-header">
-        <div class="app-header-title" onclick="location.href='index.html'" title="Voltar para SAEPE">
+        <div class="app-header-title">
           <h1>ENEM · Linguagens</h1>
           <p class="subtitle">Acompanhamento de simulados por acertos</p>
-          <p class="back-hint">← Voltar para SAEPE</p>
+          <button class="nav-link-btn" onclick="location.href='index.html'">← Voltar para SAEPE</button>
         </div>
         <div class="app-header-controls">
           <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
@@ -150,6 +152,11 @@
           <option value="all">Todas</option>
           <option value="3A">3A</option>
           <option value="3B">3B</option>
+        </select>
+        <label for="grade-filter-select">Mostrar:</label>
+        <select id="grade-filter-select" onchange="onGradeFilterChange()">
+          <option value="all">Todos</option>
+          <option value="graded">Somente com nota</option>
         </select>
       </div>
 
@@ -200,7 +207,12 @@
     const SCRIPT_URL_ENEM = 'https://script.google.com/macros/s/AKfycbz0jbrAN0CVlLJg1nOqw7mj9Rd7betFdf_mcs8ffEjfisQohbRtIpplgG-qjug7Qt_e/exec';
 
     let enemData = { students: [], tests: [], scores: [], online: true };
-    let uiState = { turma: 'all', selectedStudents: [], mainTab: 'ranking' };
+    let uiState = { turma: 'all', selectedStudents: [], mainTab: 'ranking', gradeFilter: 'all' };
+
+    function onGradeFilterChange() {
+      uiState.gradeFilter = document.getElementById('grade-filter-select').value;
+      renderAll();
+    }
 
     async function fetchEnemData() {
       try {
@@ -289,7 +301,7 @@
 
     function renderStudentChips() {
       const wrap = document.getElementById('student-chips');
-      const students = getVisibleStudents();
+      const students = getVisibleStudents().filter(s => uiState.gradeFilter === 'graded' ? studentHasAnyScore(s.id) : true);
       if (!students.length) { wrap.innerHTML = ''; return; }
       wrap.innerHTML = students.map(s => {
         const active = uiState.selectedStudents.includes(s.id);
@@ -346,7 +358,7 @@
 
       const withAvg = students.map(s => ({ student: s, avg: studentAvgPct(s.id, tests) }));
       const ranked = withAvg.filter(r => !isNaN(r.avg)).sort((a, b) => b.avg - a.avg).slice(0, 20);
-      const ungraded = withAvg.filter(r => isNaN(r.avg));
+      const ungraded = uiState.gradeFilter === 'graded' ? [] : withAvg.filter(r => isNaN(r.avg));
 
       const rankedHtml = ranked.map((r, i) => `
         <div class="rank-card" onclick="openModal('${r.student.id}')">
