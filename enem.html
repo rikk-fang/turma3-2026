@@ -132,7 +132,7 @@
   <div id="main-app" style="display:none;">
     <div id="app">
       <div class="app-header">
-        <div class="app-header-title" onclick="location.href='index_up_to_date_31-07-26.html'" title="Voltar para SAEPE">
+        <div class="app-header-title" onclick="location.href='index.html'" title="Voltar para SAEPE">
           <h1>ENEM · Linguagens</h1>
           <p class="subtitle">Acompanhamento de simulados por acertos</p>
           <p class="back-hint">← Voltar para SAEPE</p>
@@ -289,7 +289,7 @@
 
     function renderStudentChips() {
       const wrap = document.getElementById('student-chips');
-      const students = getVisibleStudents().filter(s => studentHasAnyScore(s.id));
+      const students = getVisibleStudents();
       if (!students.length) { wrap.innerHTML = ''; return; }
       wrap.innerHTML = students.map(s => {
         const active = uiState.selectedStudents.includes(s.id);
@@ -337,25 +337,18 @@
     function renderRanking() {
       const wrap = document.getElementById('ranking-wrap');
       const tests = getSortedTests();
-      const students = getVisibleStudents().filter(s => studentHasAnyScore(s.id));
+      const students = getVisibleStudents();
 
-      if (!tests.length || !students.length) {
-        wrap.innerHTML = '<div class="empty-state">Nenhum resultado registrado ainda.</div>';
+      if (!students.length) {
+        wrap.innerHTML = '<div class="empty-state">Nenhum aluno nesta turma.</div>';
         return;
       }
 
-      const ranked = students
-        .map(s => ({ student: s, avg: studentAvgPct(s.id, tests) }))
-        .filter(r => !isNaN(r.avg))
-        .sort((a, b) => b.avg - a.avg)
-        .slice(0, 20);
+      const withAvg = students.map(s => ({ student: s, avg: studentAvgPct(s.id, tests) }));
+      const ranked = withAvg.filter(r => !isNaN(r.avg)).sort((a, b) => b.avg - a.avg).slice(0, 20);
+      const ungraded = withAvg.filter(r => isNaN(r.avg));
 
-      if (!ranked.length) {
-        wrap.innerHTML = '<div class="empty-state">Nenhum resultado registrado ainda.</div>';
-        return;
-      }
-
-      wrap.innerHTML = `<div class="rank-list">${ranked.map((r, i) => `
+      const rankedHtml = ranked.map((r, i) => `
         <div class="rank-card" onclick="openModal('${r.student.id}')">
           <div class="rank-pos">${i + 1}º</div>
           <div class="rank-info">
@@ -367,7 +360,23 @@
             <div class="rank-score-lbl">MÉDIA GERAL</div>
           </div>
         </div>
-      `).join('')}</div>`;
+      `).join('');
+
+      const ungradedHtml = ungraded.map(r => `
+        <div class="rank-card" onclick="openModal('${r.student.id}')">
+          <div class="rank-pos">—</div>
+          <div class="rank-info">
+            <div class="rank-name">${r.student.name}</div>
+            <div class="rank-id">${r.student.id}</div>
+          </div>
+          <div>
+            <div class="rank-score">—</div>
+            <div class="rank-score-lbl">SEM NOTA</div>
+          </div>
+        </div>
+      `).join('');
+
+      wrap.innerHTML = `<div class="rank-list">${rankedHtml}${ungradedHtml}</div>`;
     }
 
     let chartInstance = null;
