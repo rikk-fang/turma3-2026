@@ -1,0 +1,436 @@
+<!--
+  ENEM · Linguagens — Acompanhamento de Simulados
+  By Fang and Claw 2026 v1.0
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENEM · Linguagens</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #f7f6f2;
+      --bg-card: #ffffff;
+      --ink: #1a2e28;
+      --ink-soft: #66645c;
+      --ink-muted: #8a8878;
+      --border-soft: #e5e2d8;
+      --border-strong: #ddd9cd;
+      --accent: #0d6e5e;
+      --accent-bg: #e1f5ee;
+    }
+    body.dark {
+      --bg-page: #14181a;
+      --bg-card: #262c2b;
+      --ink: #ede9e0;
+      --ink-soft: #a8a596;
+      --ink-muted: #7a7768;
+      --border-soft: #3a413c;
+      --border-strong: #454c46;
+      --accent: #4dd6b0;
+      --accent-bg: #1b3d36;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Archivo', system-ui, -apple-system, sans-serif; background: var(--bg-page); color: var(--ink); min-height: 100vh; }
+
+    #loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 14px; color: var(--ink-muted); }
+
+    #site-off-view { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; gap: 12px; }
+    #site-off-view h2 { font-size: 22px; font-weight: 700; color: var(--ink-soft); }
+    #site-off-view p { font-size: 14px; color: var(--ink-muted); }
+
+    #app { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 14px; color: var(--ink-soft); margin-bottom: 1.25rem; }
+
+    #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
+    #refresh-btn:hover { background: var(--accent-bg); }
+    #last-updated { font-size: 11px; color: var(--ink-muted); }
+
+    .app-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+    .app-header-title { min-width: 0; cursor: pointer; }
+    .app-header-title:hover h1 { color: var(--accent); }
+    .app-header-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .app-header { flex-direction: column; align-items: flex-start; }
+      .app-header-controls { flex-wrap: wrap; }
+    }
+
+    .back-hint { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+
+    .test-selector { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .test-selector label { font-size: 13px; color: var(--ink-soft); }
+    .test-selector select { font-size: 13px; padding: 6px 10px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--bg-card); color: var(--ink); }
+
+    .stats-bar { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .stat-card { background: var(--bg-card); border-radius: 10px; padding: 10px 14px; flex: 1; min-width: 100px; border: 1px solid var(--border-soft); }
+    .stat-val { font-size: 22px; font-weight: 800; color: var(--ink); }
+    .stat-lbl { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+
+    .chart-card { background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 12px; padding: 16px; margin-bottom: 1.5rem; }
+    .chart-card canvas { max-height: 260px; }
+
+    .student-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip { padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 20px; border: 1px solid var(--border-soft); background: var(--bg-page); color: var(--ink-soft); cursor: pointer; transition: all 0.15s; }
+    .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    table.sims-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-soft); }
+    table.sims-table th, table.sims-table td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border-soft); }
+    table.sims-table th { color: var(--ink-soft); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; background: var(--bg-page); }
+    table.sims-table tr:last-child td { border-bottom: none; }
+    table.sims-table td.num { font-weight: 700; }
+    .pct-bar-bg { background: var(--border-soft); border-radius: 4px; height: 6px; width: 100%; overflow: hidden; margin-top: 4px; }
+    .pct-bar-fill { background: var(--accent); height: 100%; border-radius: 4px; }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-muted); font-size: 13px; }
+
+    footer { text-align: center; font-size: 11px; color: var(--ink-muted); margin-top: 2rem; }
+  </style>
+</head>
+<body>
+
+  <div id="loading-screen">Carregando...</div>
+
+  <div id="site-off-view" style="display:none;">
+    <h2>Fora do ar</h2>
+    <p>Esta página está temporariamente indisponível.<br>Volte em breve.</p>
+  </div>
+
+  <div id="main-app" style="display:none;">
+    <div id="app">
+      <div class="app-header">
+        <div class="app-header-title" onclick="location.href='index_up_to_date_31-07-26.html'" title="Voltar para SAEPE">
+          <h1>ENEM · Linguagens</h1>
+          <p class="subtitle">Acompanhamento de simulados por acertos</p>
+          <p class="back-hint">← Voltar para SAEPE</p>
+        </div>
+        <div class="app-header-controls">
+          <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
+          <button id="theme-btn" onclick="toggleTheme()">☾ Escuro</button>
+          <span id="last-updated"></span>
+        </div>
+      </div>
+
+      <div class="test-selector">
+        <label for="turma-select">Turma:</label>
+        <select id="turma-select" onchange="onTurmaChange()">
+          <option value="all">Todas</option>
+          <option value="3A">3A</option>
+          <option value="3B">3B</option>
+        </select>
+      </div>
+
+      <div class="stats-bar" id="stats-bar"></div>
+
+      <div class="chart-card">
+        <div class="student-chips" id="student-chips"></div>
+        <canvas id="enem-chart"></canvas>
+      </div>
+
+      <div id="table-wrap"></div>
+
+      <footer>
+        By Fang and Claw 2026 &mdash; ENEM v1.0 2026
+      </footer>
+    </div>
+  </div>
+
+  <script>
+
+    const SCRIPT_URL_ENEM = 'https://script.google.com/macros/s/AKfycbz0jbrAN0CVlLJg1nOqw7mj9Rd7betFdf_mcs8ffEjfisQohbRtIpplgG-qjug7Qt_e/exec';
+
+    let enemData = { students: [], tests: [], scores: [], online: true };
+    let uiState = { turma: 'all', selectedStudents: [] };
+
+    async function fetchEnemData() {
+      try {
+        const res = await fetch(SCRIPT_URL_ENEM + '?action=getData');
+        const json = await res.json();
+        enemData = json;
+        return true;
+      } catch (e) {
+        console.error('Erro ao buscar dados ENEM:', e);
+        return false;
+      }
+    }
+
+    function num(val) {
+      if (val === undefined || val === null || val === '') return NaN;
+      return parseFloat(val.toString().replace(',', '.'));
+    }
+
+    function getTurmaFromId(id) {
+      return id ? id.split('-')[0] : '';
+    }
+
+    function getVisibleStudents() {
+      return enemData.students.filter(s => uiState.turma === 'all' || getTurmaFromId(s.id) === uiState.turma);
+    }
+
+    function getSortedTests() {
+      return [...enemData.tests].sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    function getEntry(studentId, testId) {
+      return enemData.scores.find(sc => sc.student_id === studentId && sc.test_id === testId);
+    }
+
+    function pct(entry) {
+      if (!entry) return NaN;
+      const acertos = num(entry.acertos);
+      const total = num(entry.total_questoes);
+      if (isNaN(acertos) || !total) return NaN;
+      return (acertos / total) * 100;
+    }
+
+    function onTurmaChange() {
+      uiState.turma = document.getElementById('turma-select').value;
+      uiState.selectedStudents = [];
+      renderAll();
+    }
+
+    function toggleChip(sid) {
+      const idx = uiState.selectedStudents.indexOf(sid);
+      if (idx >= 0) uiState.selectedStudents.splice(idx, 1);
+      else uiState.selectedStudents.push(sid);
+      renderStudentChips();
+      renderChart();
+    }
+
+    function renderStudentChips() {
+      const wrap = document.getElementById('student-chips');
+      const students = getVisibleStudents();
+      if (!students.length) { wrap.innerHTML = ''; return; }
+      wrap.innerHTML = students.map(s => {
+        const active = uiState.selectedStudents.includes(s.id);
+        return `<button class="chip ${active ? 'active' : ''}" onclick="toggleChip('${s.id}')">${s.name}</button>`;
+      }).join('');
+    }
+
+    function renderStatsBar() {
+      const bar = document.getElementById('stats-bar');
+      const tests = getSortedTests();
+      const students = getVisibleStudents();
+
+      if (!tests.length || !students.length) {
+        bar.innerHTML = '';
+        return;
+      }
+
+      const latestTest = tests[tests.length - 1];
+      const latestPcts = students.map(s => pct(getEntry(s.id, latestTest.id))).filter(v => !isNaN(v));
+      const avgLatest = latestPcts.length ? (latestPcts.reduce((a, b) => a + b, 0) / latestPcts.length) : NaN;
+
+      const allPcts = [];
+      students.forEach(s => tests.forEach(t => {
+        const p = pct(getEntry(s.id, t.id));
+        if (!isNaN(p)) allPcts.push(p);
+      }));
+      const avgOverall = allPcts.length ? (allPcts.reduce((a, b) => a + b, 0) / allPcts.length) : NaN;
+
+      bar.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-val">${tests.length}</div>
+          <div class="stat-lbl">Simulados aplicados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${isNaN(avgLatest) ? '—' : avgLatest.toFixed(0) + '%'}</div>
+          <div class="stat-lbl">Média do último simulado</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${isNaN(avgOverall) ? '—' : avgOverall.toFixed(0) + '%'}</div>
+          <div class="stat-lbl">Média geral</div>
+        </div>
+      `;
+    }
+
+    let chartInstance = null;
+
+    function renderChart() {
+      const ctx = document.getElementById('enem-chart').getContext('2d');
+      const tests = getSortedTests();
+      const labels = tests.map(t => t.name);
+      const isDark = document.body.classList.contains('dark');
+      const gridColor = isDark ? '#3a413c' : '#e5e2d8';
+      const inkColor = isDark ? '#a8a596' : '#66645c';
+
+      let datasets = [];
+      const palette = ['#0d6e5e', '#d97757', '#6b5200', '#8a1414', '#3a5fcd', '#a04b0c'];
+
+      if (uiState.selectedStudents.length) {
+        datasets = uiState.selectedStudents.map((sid, i) => {
+          const student = enemData.students.find(s => s.id === sid);
+          const data = tests.map(t => {
+            const p = pct(getEntry(sid, t.id));
+            return isNaN(p) ? null : Math.round(p);
+          });
+          return {
+            label: student ? student.name : sid,
+            data,
+            borderColor: palette[i % palette.length],
+            backgroundColor: palette[i % palette.length],
+            tension: 0.25,
+            spanGaps: true,
+          };
+        });
+      } else {
+        const students = getVisibleStudents();
+        const data = tests.map(t => {
+          const vals = students.map(s => pct(getEntry(s.id, t.id))).filter(v => !isNaN(v));
+          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+        });
+        datasets = [{
+          label: uiState.turma === 'all' ? 'Média geral' : 'Média Turma ' + uiState.turma,
+          data,
+          borderColor: '#0d6e5e',
+          backgroundColor: '#0d6e5e',
+          tension: 0.25,
+          spanGaps: true,
+        }];
+      }
+
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: inkColor, font: { family: 'Archivo' } } }
+          },
+          scales: {
+            y: { min: 0, max: 100, ticks: { color: inkColor, callback: v => v + '%' }, grid: { color: gridColor } },
+            x: { ticks: { color: inkColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+
+    function renderTable() {
+      const wrap = document.getElementById('table-wrap');
+      const tests = getSortedTests();
+      const students = getVisibleStudents();
+
+      if (!tests.length || !students.length) {
+        wrap.innerHTML = '<div class="empty-state">Nenhum simulado registrado ainda.</div>';
+        return;
+      }
+
+      let rows = '';
+      // one row per student per test, most recent test first
+      [...tests].reverse().forEach(t => {
+        students.forEach(s => {
+          const entry = getEntry(s.id, t.id);
+          if (!entry) return;
+          const p = pct(entry);
+          const acertos = entry.acertos ?? '—';
+          const total = entry.total_questoes ?? t.total_questoes ?? '—';
+          const isAbsent = entry.absent === true || entry.absent === 'TRUE' || entry.absent === 'true';
+          rows += `
+            <tr>
+              <td>${t.name}</td>
+              <td>${s.name}</td>
+              <td class="num">${isAbsent ? 'Ausente' : `${acertos}/${total}`}</td>
+              <td>
+                ${isAbsent ? '—' : `
+                  <div>${isNaN(p) ? '—' : p.toFixed(0) + '%'}</div>
+                  <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${isNaN(p) ? 0 : p}%"></div></div>
+                `}
+              </td>
+            </tr>`;
+        });
+      });
+
+      wrap.innerHTML = `
+        <table class="sims-table">
+          <thead>
+            <tr><th>Simulado</th><th>Aluno</th><th>Acertos</th><th>%</th></tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function renderAll() {
+      renderStatsBar();
+      renderStudentChips();
+      renderChart();
+      renderTable();
+    }
+
+    async function refreshData() {
+      const btn = document.getElementById('refresh-btn');
+      btn.textContent = '↻ Atualizando...';
+      btn.disabled = true;
+      const success = await fetchEnemData();
+      if (success) {
+        renderAll();
+        updateLastRefreshed();
+      } else {
+        alert('Erro ao atualizar. Verifique sua conexão.');
+      }
+      btn.textContent = '↻ Atualizar';
+      btn.disabled = false;
+    }
+
+    function updateLastRefreshed() {
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('theme-btn').textContent = isDark ? '○ Claro' : '☾ Escuro';
+      renderChart();
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark');
+    }
+
+    const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+
+    async function autoRefresh() {
+      await fetchEnemData();
+      if (enemData.online) {
+        renderAll();
+        updateLastRefreshed();
+      }
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    async function init() {
+      if (savedTheme === 'dark') {
+        document.getElementById('theme-btn').textContent = '○ Claro';
+      }
+      const success = await fetchEnemData();
+      document.getElementById('loading-screen').style.display = 'none';
+
+      if (!success) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        document.getElementById('site-off-view').querySelector('p').textContent = 'Erro ao carregar dados. Verifique sua conexão.';
+        return;
+      }
+
+      if (enemData.online === false) {
+        document.getElementById('site-off-view').style.display = 'flex';
+        return;
+      }
+
+      document.getElementById('main-app').style.display = 'block';
+      updateLastRefreshed();
+      renderAll();
+      setTimeout(autoRefresh, REFRESH_INTERVAL);
+    }
+
+    init();
+  </script>
+</body>
+</html>
