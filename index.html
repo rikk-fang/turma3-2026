@@ -58,6 +58,8 @@
 
 #refresh-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
     #refresh-btn:hover { background: var(--accent-bg); }
+    .nav-link-btn { margin-top: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--accent); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; }
+.nav-link-btn:hover { background: var(--accent-bg); }
     #last-updated { font-size: 11px; color: var(--ink-muted); }
 
     .app-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
@@ -250,10 +252,10 @@
 
   <div id="main-app" style="display:none;">
     <div id="app">
-<div class="app-header">
-<div class="app-header-title" onclick="location.href='enem.html'" style="cursor:pointer;" title="Ir para ENEM Linguagens">
+<div class="app-header-title">
   <h1>Tier List de Proficiência</h1>
   <p class="subtitle">Desempenho dos alunos por turma ou visão geral</p>
+  <button class="nav-link-btn" onclick="location.href='enem.html'">→ ENEM Linguagens</button>
 </div>
         <div class="app-header-controls">
           <button id="refresh-btn" onclick="refreshData()">↻ Atualizar</button>
