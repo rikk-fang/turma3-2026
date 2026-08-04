@@ -260,21 +260,24 @@ function pct(entry, test) {
 }
 
     function studentHasAnyScore(studentId) {
-      return enemData.scores.some(sc => sc.student_id === studentId && !isNaN(pct(sc)));
-    }
+  return enemData.scores.some(sc => {
+    const test = enemData.tests.find(t => t.id === sc.test_id);
+    return !isNaN(pct(sc, test));
+  });
+}
 
-    function studentAvgPct(studentId, tests) {
-      const vals = tests.map(t => pct(getEntry(studentId, t.id))).filter(v => !isNaN(v));
-      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
-    }
+ function studentAvgPct(studentId, tests) {
+  const vals = tests.map(t => pct(getEntry(studentId, t.id), t)).filter(v => !isNaN(v));
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+}
 
-    function studentLatestPct(studentId, tests) {
-      for (let i = tests.length - 1; i >= 0; i--) {
-        const p = pct(getEntry(studentId, tests[i].id));
-        if (!isNaN(p)) return p;
-      }
-      return NaN;
-    }
+function studentLatestPct(studentId, tests) {
+  for (let i = tests.length - 1; i >= 0; i--) {
+    const p = pct(getEntry(studentId, tests[i].id), tests[i]);
+    if (!isNaN(p)) return p;
+  }
+  return NaN;
+}
 
     function onTurmaChange() {
       uiState.turma = document.getElementById('turma-select').value;
@@ -320,14 +323,14 @@ function pct(entry, test) {
       }
 
       const latestTest = tests[tests.length - 1];
-      const latestPcts = students.map(s => pct(getEntry(s.id, latestTest.id))).filter(v => !isNaN(v));
+      const latestPcts = students.map(s => pct(getEntry(s.id, latestTest.id), latestTest)).filter(v => !isNaN(v));
       const avgLatest = latestPcts.length ? (latestPcts.reduce((a, b) => a + b, 0) / latestPcts.length) : NaN;
 
       const allPcts = [];
-      students.forEach(s => tests.forEach(t => {
-        const p = pct(getEntry(s.id, t.id));
-        if (!isNaN(p)) allPcts.push(p);
-      }));
+   students.forEach(s => tests.forEach(t => {
+  const p = pct(getEntry(s.id, t.id), t);
+  if (!isNaN(p)) allPcts.push(p);
+}));
       const avgOverall = allPcts.length ? (allPcts.reduce((a, b) => a + b, 0) / allPcts.length) : NaN;
 
       bar.innerHTML = `
@@ -409,10 +412,10 @@ function pct(entry, test) {
       if (uiState.selectedStudents.length) {
         datasets = uiState.selectedStudents.map((sid, i) => {
           const student = enemData.students.find(s => s.id === sid);
-          const data = tests.map(t => {
-            const p = pct(getEntry(sid, t.id));
-            return isNaN(p) ? null : Math.round(p);
-          });
+        const data = tests.map(t => {
+  const p = pct(getEntry(sid, t.id), t);
+  return isNaN(p) ? null : Math.round(p);
+});
           return {
             label: student ? student.name : sid,
             data,
@@ -424,10 +427,10 @@ function pct(entry, test) {
         });
       } else {
         const students = getVisibleStudents();
-        const data = tests.map(t => {
-          const vals = students.map(s => pct(getEntry(s.id, t.id))).filter(v => !isNaN(v));
-          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-        });
+       const data = tests.map(t => {
+  const vals = students.map(s => pct(getEntry(s.id, t.id), t)).filter(v => !isNaN(v));
+  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+});
         datasets = [{
           label: uiState.turma === 'all' ? 'Média geral' : 'Média Turma ' + uiState.turma,
           data,
@@ -470,7 +473,7 @@ function pct(entry, test) {
       [...tests].reverse().forEach(t => {
         students.forEach(s => {
           const entry = getEntry(s.id, t.id);
-          const p = entry ? pct(entry) : NaN;
+          const p = entry ? pct(entry, t) : NaN;
           const absent = isAbsentEntry(entry);
           const acertos = entry && entry.acertos !== undefined && entry.acertos !== '' ? entry.acertos : '—';
           const total = (entry && entry.total_questoes) ? entry.total_questoes : (t.total_questoes || '—');
@@ -526,7 +529,7 @@ function pct(entry, test) {
         const entry = getEntry(studentId, t.id);
         if (!entry) return;
         const absent = isAbsentEntry(entry);
-        const p = pct(entry);
+        const p = pct(entry, t);
         const acertos = entry.acertos !== undefined && entry.acertos !== '' ? entry.acertos : '—';
         const total = entry.total_questoes || t.total_questoes || '—';
         rows += `
