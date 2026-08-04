@@ -251,13 +251,13 @@
       return entry && (entry.absent === true || entry.absent === 'TRUE' || entry.absent === 'true');
     }
 
-    function pct(entry) {
-      if (!entry || isAbsentEntry(entry)) return NaN;
-      const acertos = num(entry.acertos);
-      const total = num(entry.total_questoes);
-      if (isNaN(acertos) || !total) return NaN;
-      return (acertos / total) * 100;
-    }
+function pct(entry, test) {
+  if (!entry || isAbsentEntry(entry)) return NaN;
+  const acertos = num(entry.acertos);
+  const total = num(entry.total_questoes) || (test ? num(test.total_questoes) : NaN);
+  if (isNaN(acertos) || !total) return NaN;
+  return (acertos / total) * 100;
+}
 
     function studentHasAnyScore(studentId) {
       return enemData.scores.some(sc => sc.student_id === studentId && !isNaN(pct(sc)));
