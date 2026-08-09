@@ -237,6 +237,8 @@
     .padrao-tab { padding: 7px 16px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--ink-soft); border: none; transition: background 0.15s, color 0.15s; }
     .padrao-tab.active { background: var(--accent); color: #fff; }
     .padrao-tab:not(:last-child) { border-right: 1px solid var(--border-soft); }
+    .pdf-link-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--bg-card); color: var(--ink); border: 1px solid var(--border-soft); border-radius: 8px; transition: background 0.15s; text-decoration: none; display: inline-block; }
+.pdf-link-btn:hover { background: var(--accent-bg); }
   </style>
 </head>
 <body>
@@ -333,9 +335,10 @@
           <button class="padrao-tab" onclick="setPadraoTab('descritores')">Descritores</button>
         </div>
         <div id="padrao-gabarito">
-          <div class="test-selector">
+         <div class="test-selector">
             <label>Teste:</label>
             <select id="padrao-test-select" onchange="renderPadrao()"></select>
+            <a id="padrao-pdf-link" href="#" target="_blank" rel="noopener" class="pdf-link-btn" style="display:none;">Abrir PDF</a>
           </div>
           <div id="padrao-table-wrap"></div>
 <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
@@ -1012,7 +1015,17 @@ function openProfile(studentId) {
       if (prev && appData.tests.find(t => t.id === prev)) sel.value = prev;
       else sel.value = getLatestTestId();
 
-      const testId = sel.value;
+const testId = sel.value;
+      const testObj = appData.tests.find(t => t.id === testId);
+      const pdfLink = document.getElementById('padrao-pdf-link');
+      if (pdfLink) {
+        if (testObj && testObj.pdf_url) {
+          pdfLink.href = testObj.pdf_url;
+          pdfLink.style.display = 'inline-block';
+        } else {
+          pdfLink.style.display = 'none';
+        }
+      }
       const items = appData.testModel ? appData.testModel.filter(i => i.test_id === testId) : [];
       const wrap = document.getElementById('padrao-table-wrap');
 
