@@ -136,6 +136,7 @@
     .roster-table th:first-child { background: var(--bg-page); z-index: 3; }
     .roster-table td:first-child { background: var(--bg-card); font-weight: 500; }
     .roster-table tr:hover td:first-child { background: var(--bg-page); }
+        .roster-id { font-size: 11px; font-weight: 400; color: var(--ink-muted); margin-top: 2px; letter-spacing: 0.02em; }
     #roster-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
     .tier-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
     .badge-S { background: var(--tier-s-bg); color: var(--tier-s); }
@@ -801,7 +802,7 @@ if (tab === 'progresso') renderChart();
           return '<td style="text-align:center;"><span class="tier-badge badge-' + tier + '">' + entry.score + '</span></td>';
         }).join('');
      const overallTier = getStudentOverallTier(s.id);
-        return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '</td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
+               return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '<div class="roster-id">' + s.id + '</div></td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells + getTurmaFromId(s.id) + '</td>' + testCells +
           '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + TIERS.find(t => t.id === overallTier).name + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
       }).join('');
 
@@ -1563,7 +1564,7 @@ wrap.innerHTML =
       if (!rows.length) return;
 
       const sorted = rows.slice().sort((a, b) => a.theta - b.theta);
-      const labels = sorted.map(r => r.name);
+            const labels = sorted.map(r => r.id);
       const colors = sorted.map(r => tierColorForNota(r.nota));
 
       const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
@@ -1600,8 +1601,10 @@ wrap.innerHTML =
               pointRadius: 4,
               pointHoverRadius: 6,
               pointBackgroundColor: colors,
-              pointBorderColor: cssVar('--bg-card'),
+                            pointBorderColor: cssVar('--bg-card'),
               pointBorderWidth: 1,
+              backgroundColor: cssVar('--ink'),
+              borderColor: cssVar('--ink'),
               order: 1
             }
           ]
@@ -1611,8 +1614,19 @@ wrap.innerHTML =
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } },
-            tooltip: {
+                        tooltip: {
+              backgroundColor: cssVar('--bg-card'),
+              titleColor: cssVar('--ink'),
+              bodyColor: cssVar('--ink-soft'),
+              borderColor: cssVar('--border-soft'),
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
               callbacks: {
+                title: function(ctx) {
+                  const r = sorted[ctx[0].dataIndex];
+                  return r.name + '  (' + r.id + ')';
+                },
                 label: function(ctx) {
                   const r = sorted[ctx.dataIndex];
                   if (ctx.datasetIndex === 1) return 'Theta: ' + r.theta.toFixed(3);
@@ -1625,7 +1639,7 @@ wrap.innerHTML =
           },
           scales: {
             y: { min: yMin, max: yMax, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
-            x: { ticks: { font: { size: 9 }, color: cssVar('--ink-muted'), maxRotation: 90, minRotation: 45, autoSkip: false }, grid: { display: false } }
+                       x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted'), maxRotation: 0, minRotation: 0, autoSkip: false }, grid: { display: false } }
           }
         },
         plugins: [{
