@@ -404,7 +404,11 @@
         <p class="chart-note">Linhas sólidas: valores reais. Linhas tracejadas: projeção anterior ao teste. Baixa confiança (menos de 3 testes anteriores) aparece mais clara.</p>
         </div>  
         <div id="tab-precisao" style="display:none;">
-        <div class="controls" style="margin-top:1rem;">
+               <div class="controls" style="margin-top:1rem;">
+          <div class="tab-group" id="precisao-view-tabs">
+            <button class="tab" onclick="setPrecisaoView('geral')">Geral</button>
+            <button class="tab active" onclick="setPrecisaoView('teste')">Por teste</button>
+          </div>
           <div class="tab-group" id="precisao-class-tabs">
             <button class="tab active" onclick="setPrecisaoClass('all')">Geral</button>
             <button class="tab" onclick="setPrecisaoClass('A')">Turma A</button>
@@ -425,7 +429,7 @@
 
         <div id="precisao-confianca">
           <div class="chart-wrap"><canvas id="precisao-theta-chart"></canvas></div>
-          <p class="chart-note">Theta de cada aluno com intervalo de confiança de 95%. Barras mais longas indicam estimativa menos precisa.</p>
+          <p class="chart-note" id="precisao-theta-note">Theta de cada aluno com intervalo de confiança de 95%. Barras mais longas indicam estimativa menos precisa.</p>
 
           <div class="chart-wrap"><canvas id="precisao-se-chart"></canvas></div>
           <p class="chart-note">Erro padrão da estimativa (SE). Acima de 0,50 a nota deve ser lida com cautela.</p>
@@ -578,8 +582,9 @@ let uiState = {
       trajetoriaMode: 'class',
       trajetoriaStudent: '',
       trajetoriaMethod: 'regression',
-      precisaoClass: 'all',
-      precisaoTab: 'confianca'
+          precisaoClass: 'all',
+      precisaoTab: 'confianca',
+      precisaoView: 'teste'
     };
 
     function getTestsForScope() {
@@ -1517,7 +1522,60 @@ wrap.innerHTML =
       });
       renderPrecisao();
     }
+    function setPrecisaoView(v) {
+      uiState.precisaoView = v;
+      document.querySelectorAll('#precisao-view-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['geral', 'teste'][i] === v);
+      });
+      renderPrecisao();
+    }
 
+    function getPrecisaoRowsGeral() {
+      const cls = uiState.precisaoClass || 'all';
+      const scopeTests = getTestsForScope();
+
+      return appData.students
+        .filter(s => cls === 'all' || getTurmaFromId(s.id) === cls)
+        .map(s => {
+          const perTest = [];
+          scopeTests.forEach(t => {
+            const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+            if (!e) return;
+            const theta = parseNum(e.theta);
+            if (theta === null) return;
+            const totalItens = appData.testModel
+              ? appData.testModel.filter(i => i.test_id === t.id).length
+              : 0;
+            perTest.push({
+              theta: theta,
+              se: parseNum(e.se_eap),
+              nota: parseNum(e.score),
+              semDados: totalItens > 0 && parseNum(e.total_mistakes) === totalItens
+            });
+          });
+
+          if (!perTest.length) return null;
+
+          const thetas = perTest.map(p => p.theta);
+          const ses = perTest.map(p => p.se).filter(v => v !== null);
+          const notas = perTest.map(p => p.nota).filter(v => v !== null);
+
+          return {
+            id: s.id,
+            shortId: s.id.replace(/^3[AB]-/, ''),
+            name: s.name,
+            theta: thetas.reduce((a, b) => a + b, 0) / thetas.length,
+            thetaMin: Math.min.apply(null, thetas),
+            thetaMax: Math.max.apply(null, thetas),
+            se: ses.length ? ses.reduce((a, b) => a + b, 0) / ses.length : null,
+            nota: notas.length ? notas.reduce((a, b) => a + b, 0) / notas.length : null,
+            nTestes: perTest.length,
+            nSemDados: perTest.filter(p => p.semDados).length,
+            semDados: false
+          };
+        })
+        .filter(r => r !== null);
+    }
         let precisaoCharts = { theta: null, se: null, trend: null, modelo: null };
 
     function destroyPrecisaoChart(key) {
@@ -1572,13 +1630,17 @@ wrap.innerHTML =
                         const labels = sorted.map(r => r.id);
       const colors = sorted.map(r => r.semDados ? cssVar('--ink-muted') : tierColorForNota(r.nota));
 
-      const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
+            const isGeral = uiState.precisaoView === 'geral';
+      const ciData = isGeral
+        ? sorted.map(r => [r.thetaMin, r.thetaMax])
+        : sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
       const pointData = sorted.map(r => r.theta);
 
-      const allVals = [];
+           const allVals = [];
       sorted.forEach(r => {
         allVals.push(r.theta);
-        if (r.se !== null) allVals.push(r.theta - 1.96 * r.se, r.theta + 1.96 * r.se);
+        if (isGeral) allVals.push(r.thetaMin, r.thetaMax);
+        else if (r.se !== null) allVals.push(r.theta - 1.96 * r.se, r.theta + 1.96 * r.se);
       });
       const yMin = Math.min.apply(null, allVals) - 0.3;
       const yMax = Math.max.apply(null, allVals) + 0.3;
@@ -1589,12 +1651,12 @@ wrap.innerHTML =
           labels: labels,
           datasets: [
             {
-              label: 'IC 95%',
+                           label: isGeral ? 'Variação entre testes' : 'IC 95%',
               data: ciData,
-              backgroundColor: colors,
+              backgroundColor: isGeral ? colors.map(c => c + '55') : colors,
               borderColor: colors,
               borderWidth: 1,
-              barPercentage: 0.18,
+              barPercentage: isGeral ? 0.5 : 0.18,
               categoryPercentage: 0.9,
               order: 2
             },
@@ -1634,6 +1696,13 @@ wrap.innerHTML =
                 },
                        label: function(ctx) {
                   const r = sorted[ctx.dataIndex];
+                                   if (isGeral) {
+                    if (ctx.datasetIndex === 1) {
+                      return 'Theta médio: ' + r.theta.toFixed(3) + '  —  ' + r.nTestes + ' teste(s)' +
+                             (r.nSemDados ? ', ' + r.nSemDados + ' sem acertos' : '');
+                    }
+                    return 'Variação: ' + r.thetaMin.toFixed(2) + ' a ' + r.thetaMax.toFixed(2);
+                  }
                   if (r.semDados) return 'Sem acertos — estimativa não interpretável';
                   if (ctx.datasetIndex === 1) return 'Theta: ' + r.theta.toFixed(3);
                   if (r.se === null) return 'SE indisponível';
@@ -1741,9 +1810,17 @@ wrap.innerHTML =
         }]
       });
     }
-    function renderPrecisao() {
+       function renderPrecisao() {
       const sel = document.getElementById('precisao-test-select');
+      const selWrap = sel ? sel.closest('.test-selector') : null;
+      const viewTabs = document.getElementById('precisao-view-tabs');
       if (!sel) return;
+
+      const isModelo = uiState.precisaoTab === 'modelo';
+      if (viewTabs) viewTabs.style.display = isModelo ? 'none' : 'flex';
+
+      const isGeral = !isModelo && uiState.precisaoView === 'geral';
+      if (selWrap) selWrap.style.display = isGeral ? 'none' : 'flex';
 
       const scopeTests = getTestsForScope();
       if (!scopeTests.length) { sel.innerHTML = ''; return; }
@@ -1753,13 +1830,25 @@ wrap.innerHTML =
       if (prev && scopeTests.find(t => t.id === prev)) sel.value = prev;
       else sel.value = scopeTests[scopeTests.length - 1].id;
 
-      const rows = getPrecisaoRows(sel.value);
+      const rows = isGeral ? getPrecisaoRowsGeral() : getPrecisaoRows(sel.value);
 
-           if (uiState.precisaoTab === 'confianca') {
+      const notaCap = document.getElementById('precisao-theta-note');
+      if (notaCap) {
+        notaCap.textContent = isGeral
+          ? 'Theta médio de cada aluno no ciclo. A barra mostra a variação entre o menor e o maior resultado — não é um intervalo de confiança.'
+          : 'Theta de cada aluno com intervalo de confiança de 95%. Barras mais longas indicam estimativa menos precisa.';
+      }
+      const seCap = document.getElementById('precisao-se-note');
+      if (seCap) {
+        seCap.textContent = isGeral
+          ? 'Erro padrão médio no ciclo. Acima de 0,50 as notas do aluno devem ser lidas com cautela.'
+          : 'Erro padrão da estimativa (SE). Acima de 0,50 a nota deve ser lida com cautela.';
+      }
+
+      if (uiState.precisaoTab === 'confianca') {
         renderPrecisaoTheta(rows);
         renderPrecisaoSE(rows);
       }
-    
     }
 
     function renderDescritores() {
