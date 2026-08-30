@@ -1659,7 +1659,82 @@ wrap.innerHTML =
         }]
       });
     }
+    function renderPrecisaoSE(rows) {
+      const canvas = document.getElementById('precisao-se-chart');
+      if (!canvas) return;
+      destroyPrecisaoChart('se');
 
+      const withSE = rows.filter(r => r.se !== null);
+      if (!withSE.length) return;
+
+      const sorted = withSE.slice().sort((a, b) => b.se - a.se);
+      const labels = sorted.map(r => r.id);
+      const colors = sorted.map(r => r.se > 0.5 ? cssVar('--tier-c-border') : cssVar('--tier-s-border'));
+      const altoSE = sorted.filter(r => r.se > 0.5).length;
+
+      canvas.parentElement.style.height = Math.max(220, sorted.length * 18 + 60) + 'px';
+
+      precisaoCharts.se = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'SE (' + altoSE + ' acima de 0,50)',
+            data: sorted.map(r => r.se),
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 0,
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } },
+            tooltip: {
+              backgroundColor: cssVar('--bg-card'),
+              titleColor: cssVar('--ink'),
+              bodyColor: cssVar('--ink-soft'),
+              borderColor: cssVar('--border-soft'),
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                title: function(ctx) {
+                  const r = sorted[ctx[0].dataIndex];
+                  return r.name + '  (' + r.id + ')';
+                },
+                label: function(ctx) {
+                  const r = sorted[ctx.dataIndex];
+                  return 'SE: ' + r.se.toFixed(3) + (r.se > 0.5 ? '  — estimativa imprecisa' : '');
+                }
+              }
+            }
+          },
+          scales: {
+            x: { min: 0, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
+            y: { ticks: { font: { size: 9 }, color: cssVar('--ink-muted'), autoSkip: false }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'precisaoSELimiar',
+          afterDraw: function(chart) {
+            const c = chart.ctx;
+            const x = chart.scales.x.getPixelForValue(0.5);
+            if (x < chart.chartArea.left || x > chart.chartArea.right) return;
+            c.save();
+            c.strokeStyle = cssVar('--tier-c-border');
+            c.lineWidth = 1;
+            c.setLineDash([4, 4]);
+            c.beginPath(); c.moveTo(x, chart.chartArea.top); c.lineTo(x, chart.chartArea.bottom); c.stroke();
+            c.restore();
+          }
+        }]
+      });
+    }
     function renderPrecisao() {
       const sel = document.getElementById('precisao-test-select');
       if (!sel) return;
@@ -1674,8 +1749,9 @@ wrap.innerHTML =
 
       const rows = getPrecisaoRows(sel.value);
 
-      if (uiState.precisaoTab === 'confianca') {
+           if (uiState.precisaoTab === 'confianca') {
         renderPrecisaoTheta(rows);
+        renderPrecisaoSE(rows);
       }
     
     }
