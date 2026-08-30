@@ -1,6 +1,6 @@
 <!--
   Tier List de Proficiência modelo SAEPE
-  By Fang and Claw 2026 v3.0 
+  By Fang and Claw 2026 v3.1 
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -443,7 +443,7 @@
 
         <div id="precisao-modelo" style="display:none;">
           <div class="chart-wrap"><canvas id="precisao-modelo-chart"></canvas></div>
-          <p class="chart-note">Nota final × total de acertos. Alunos fora da diagonal são aqueles em que o modelo TRI divergiu da contagem simples de acertos.</p>
+          <p class="chart-note" id="precisao-modelo-note">Nota final × total de acertos. Alunos fora da diagonal são aqueles em que o modelo TRI divergiu da contagem simples de acertos.</p>
         </div>
       
       </div>
@@ -459,7 +459,7 @@
     </div>
     
     <footer>
-      By Fang and Claw 2026 &mdash; v3.0 2026
+      By Fang and Claw 2026 &mdash; v3.1 2026
     </footer>
   </div>
 
@@ -1901,6 +1901,106 @@ wrap.innerHTML =
         }
       });
     }
+        function renderPrecisaoModelo(testId) {
+      const canvas = document.getElementById('precisao-modelo-chart');
+      if (!canvas) return;
+      destroyPrecisaoChart('modelo');
+
+      const totalItens = appData.testModel
+        ? appData.testModel.filter(i => i.test_id === testId).length
+        : 0;
+      if (!totalItens) return;
+
+      const rows = getPrecisaoRows(testId)
+        .filter(r => !r.semDados && r.nota !== null && r.mistakes !== null)
+        .map(r => ({
+          x: totalItens - r.mistakes,
+          y: r.nota,
+          id: r.id,
+          name: r.name,
+          color: tierColorForNota(r.nota)
+        }));
+
+      if (!rows.length) return;
+
+      precisaoCharts.modelo = new Chart(canvas.getContext('2d'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Alunos',
+            data: rows,
+            backgroundColor: rows.map(r => r.color),
+            borderColor: cssVar('--bg-card'),
+            borderWidth: 1,
+            pointRadius: 6,
+            pointHoverRadius: 9
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: cssVar('--bg-card'),
+              titleColor: cssVar('--ink'),
+              bodyColor: cssVar('--ink-soft'),
+              borderColor: cssVar('--border-soft'),
+              borderWidth: 1,
+              padding: 10,
+              displayColors: false,
+              callbacks: {
+                title: function(ctx) {
+                  const r = rows[ctx[0].dataIndex];
+                  return r.name + '  (' + r.id + ')';
+                },
+                label: function(ctx) {
+                  const r = rows[ctx.dataIndex];
+                  return [r.x + ' de ' + totalItens + ' acertos', 'Nota: ' + r.y.toFixed(2)];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              min: 0,
+              max: totalItens,
+              title: { display: true, text: 'Total de acertos', font: { size: 11 }, color: cssVar('--ink-muted') },
+              ticks: { font: { size: 11 }, color: cssVar('--ink-muted'), precision: 0 },
+              grid: { color: cssVar('--border-soft') }
+            },
+            y: {
+              min: 0, max: 500,
+              title: { display: true, text: 'Nota final', font: { size: 11 }, color: cssVar('--ink-muted') },
+              ticks: { font: { size: 11 }, color: cssVar('--ink-muted') },
+              grid: { color: cssVar('--border-soft') }
+            }
+          }
+        },
+        plugins: [{
+          id: 'modeloRefLines',
+          afterDraw: function(chart) {
+            const c = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xLeft = chart.chartArea.left;
+            const xRight = chart.chartArea.right;
+            [{ val: 306, label: 'Desejável', color: cssVar('--tier-s-border') },
+             { val: 271, label: 'Básico', color: cssVar('--tier-a-border') },
+             { val: 226, label: 'El. II', color: cssVar('--tier-b-border') }].forEach(function(ref) {
+              const y = yAxis.getPixelForValue(ref.val);
+              c.save();
+              c.strokeStyle = ref.color;
+              c.lineWidth = 1;
+              c.setLineDash([4, 4]);
+              c.beginPath(); c.moveTo(xLeft, y); c.lineTo(xRight, y); c.stroke();
+              c.fillStyle = ref.color;
+              c.font = '10px Archivo, system-ui';
+              c.fillText(ref.label, xRight + 4, y + 4);
+              c.restore();
+            });
+          }
+        }]
+      });
+    }
        function renderPrecisao() {
       const sel = document.getElementById('precisao-test-select');
       const selWrap = sel ? sel.closest('.test-selector') : null;
@@ -1936,10 +2036,21 @@ wrap.innerHTML =
           : 'Erro padrão da estimativa (SE). Acima de 0,50 a nota deve ser lida com cautela.';
       }
 
-         if (uiState.precisaoTab === 'confianca') {
+              if (uiState.precisaoTab === 'confianca') {
         renderPrecisaoTheta(rows);
         renderPrecisaoSE(rows);
         renderPrecisaoTrend();
+      } else {
+        renderPrecisaoModelo(sel.value);
+        const modCap = document.getElementById('precisao-modelo-note');
+        if (modCap && uiState.precisaoView === 'geral') {
+          modCap.textContent = 'A visão Geral não se aplica aqui — mostrando ' +
+            (appData.tests.find(t => t.id === sel.value) || {}).name +
+            '. Nota final × total de acertos: alunos fora da diagonal são aqueles em que o modelo TRI divergiu da contagem simples.';
+        } else if (modCap) {
+          modCap.textContent = 'Nota final × total de acertos. Alunos fora da diagonal são aqueles em que o modelo TRI divergiu da contagem simples de acertos.';
+        }
+      
   
       }
     }
