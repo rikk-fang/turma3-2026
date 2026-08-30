@@ -1538,6 +1538,9 @@ wrap.innerHTML =
 
     function getPrecisaoRows(testId) {
       const cls = uiState.precisaoClass || 'all';
+      const totalItens = appData.testModel
+        ? appData.testModel.filter(i => i.test_id === testId).length
+        : 0;
       return appData.students
         .filter(s => cls === 'all' || getTurmaFromId(s.id) === cls)
         .map(s => {
@@ -1551,8 +1554,9 @@ wrap.innerHTML =
             name: s.name,
             theta: theta,
             se: parseNum(e.se_eap),
-            nota: parseNum(e.score),
-            mistakes: parseNum(e.total_mistakes)
+                    nota: parseNum(e.score),
+            mistakes: parseNum(e.total_mistakes),
+            semDados: totalItens > 0 && parseNum(e.total_mistakes) === totalItens
           };
         })
         .filter(r => r !== null);
@@ -1566,7 +1570,7 @@ wrap.innerHTML =
 
       const sorted = rows.slice().sort((a, b) => a.theta - b.theta);
                         const labels = sorted.map(r => r.id);
-      const colors = sorted.map(r => tierColorForNota(r.nota));
+      const colors = sorted.map(r => r.semDados ? cssVar('--ink-muted') : tierColorForNota(r.nota));
 
       const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
       const pointData = sorted.map(r => r.theta);
@@ -1628,8 +1632,9 @@ wrap.innerHTML =
                   const r = sorted[ctx[0].dataIndex];
                   return r.name + '  (' + r.id + ')';
                 },
-                label: function(ctx) {
+                       label: function(ctx) {
                   const r = sorted[ctx.dataIndex];
+                  if (r.semDados) return 'Sem acertos — estimativa não interpretável';
                   if (ctx.datasetIndex === 1) return 'Theta: ' + r.theta.toFixed(3);
                   if (r.se === null) return 'SE indisponível';
                   return 'IC 95%: ' + (r.theta - 1.96 * r.se).toFixed(2) + ' a ' +
@@ -1669,8 +1674,8 @@ wrap.innerHTML =
 
       const sorted = withSE.slice().sort((a, b) => b.se - a.se);
       const labels = sorted.map(r => r.id);
-      const colors = sorted.map(r => r.se > 0.5 ? cssVar('--tier-c-border') : cssVar('--tier-s-border'));
-      const altoSE = sorted.filter(r => r.se > 0.5).length;
+            const colors = sorted.map(r => r.semDados ? cssVar('--ink-muted') : (r.se > 0.5 ? cssVar('--tier-c-border') : cssVar('--tier-s-border')));
+      const altoSE = sorted.filter(r => r.se > 0.5 && !r.semDados).length;
 
       canvas.parentElement.style.height = Math.max(220, sorted.length * 18 + 60) + 'px';
 
@@ -1707,8 +1712,9 @@ wrap.innerHTML =
                   const r = sorted[ctx[0].dataIndex];
                   return r.name + '  (' + r.id + ')';
                 },
-                label: function(ctx) {
+                                label: function(ctx) {
                   const r = sorted[ctx.dataIndex];
+                  if (r.semDados) return 'Sem acertos — estimativa não interpretável';
                   return 'SE: ' + r.se.toFixed(3) + (r.se > 0.5 ? '  — estimativa imprecisa' : '');
                 }
               }
