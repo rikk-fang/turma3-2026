@@ -1545,8 +1545,9 @@ wrap.innerHTML =
           if (!e) return null;
           const theta = parseNum(e.theta);
           if (theta === null) return null;
-          return {
+                    return {
             id: s.id,
+            shortId: s.id.replace(/^3[AB]-/, ''),
             name: s.name,
             theta: theta,
             se: parseNum(e.se_eap),
@@ -1564,7 +1565,7 @@ wrap.innerHTML =
       if (!rows.length) return;
 
       const sorted = rows.slice().sort((a, b) => a.theta - b.theta);
-            const labels = sorted.map(r => r.id);
+                  const labels = sorted.map(r => uiState.precisaoClass === 'all' ? r.id : r.shortId);
       const colors = sorted.map(r => tierColorForNota(r.nota));
 
       const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
@@ -1639,7 +1640,7 @@ wrap.innerHTML =
           },
           scales: {
             y: { min: yMin, max: yMax, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
-                       x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted'), maxRotation: 0, minRotation: 0, autoSkip: false }, grid: { display: false } }
+                       x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted'), maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 8 }, grid: { display: false } }
           }
         },
         plugins: [{
