@@ -802,7 +802,7 @@ if (tab === 'progresso') renderChart();
           return '<td style="text-align:center;"><span class="tier-badge badge-' + tier + '">' + entry.score + '</span></td>';
         }).join('');
      const overallTier = getStudentOverallTier(s.id);
-               return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '<div class="roster-id">' + s.id + '</div></td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells + getTurmaFromId(s.id) + '</td>' + testCells +
+        return '<tr style="cursor:pointer;" onclick="openProfile(\'' + s.id + '\')" ><td>' + s.name + '<div class="roster-id">' + s.id + '</div></td><td style="text-align:center;">' + getTurmaFromId(s.id) + '</td>' + testCells +
           '<td style="text-align:center;">' + (overallTier ? '<span class="tier-badge badge-' + overallTier + '">' + TIERS.find(t => t.id === overallTier).name + '</span>' : '<span class="tier-badge badge-none">—</span>') + '</td></tr>';
       }).join('');
 
@@ -1565,7 +1565,7 @@ wrap.innerHTML =
       if (!rows.length) return;
 
       const sorted = rows.slice().sort((a, b) => a.theta - b.theta);
-                  const labels = sorted.map(r => uiState.precisaoClass === 'all' ? r.id : r.shortId);
+                        const labels = sorted.map(r => r.id);
       const colors = sorted.map(r => tierColorForNota(r.nota));
 
       const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
@@ -1640,7 +1640,7 @@ wrap.innerHTML =
           },
           scales: {
             y: { min: yMin, max: yMax, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
-                       x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted'), maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 8 }, grid: { display: false } }
+                                   x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted'), maxRotation: 45, minRotation: 45, autoSkip: false }, grid: { display: false } } color: cssVar('--ink-muted'), maxRotation: 0, minRotation: 0, autoSkip: true, autoSkipPadding: 8 }, grid: { display: false } }
           }
         },
         plugins: [{
