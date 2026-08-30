@@ -971,7 +971,9 @@ function toggleTheme() {
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
   document.getElementById('theme-btn').textContent = isDark ? '○ Claro' : '☾ Escuro';
   if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
-  if (document.getElementById('tab-evolucao').style.display !== 'none') renderEvolucao();
+   if (document.getElementById('tab-evolucao').style.display !== 'none') renderEvolucao();
+  if (document.getElementById('tab-precisao').style.display !== 'none') renderPrecisao();
+
 }
 
 const savedTheme = localStorage.getItem('theme');
@@ -1515,6 +1517,134 @@ wrap.innerHTML =
       renderPrecisao();
     }
 
+        let precisaoCharts = { theta: null, se: null, trend: null, modelo: null };
+
+    function destroyPrecisaoChart(key) {
+      if (precisaoCharts[key]) { precisaoCharts[key].destroy(); precisaoCharts[key] = null; }
+    }
+
+    function parseNum(val) {
+      if (val === undefined || val === null || val === '') return null;
+      const n = parseFloat(val.toString().replace(',', '.'));
+      return isNaN(n) ? null : n;
+    }
+
+    function tierColorForNota(nota) {
+      if (nota === null) return cssVar('--ink-muted');
+      const map = { S: '--tier-s-border', A: '--tier-a-border', B: '--tier-b-border', C: '--tier-c-border' };
+      return cssVar(map[scoreToTier(nota)] || '--ink-muted');
+    }
+
+    function getPrecisaoRows(testId) {
+      const cls = uiState.precisaoClass || 'all';
+      return appData.students
+        .filter(s => cls === 'all' || getTurmaFromId(s.id) === cls)
+        .map(s => {
+          const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === testId);
+          if (!e) return null;
+          const theta = parseNum(e.theta);
+          if (theta === null) return null;
+          return {
+            id: s.id,
+            name: s.name,
+            theta: theta,
+            se: parseNum(e.se_eap),
+            nota: parseNum(e.score),
+            mistakes: parseNum(e.total_mistakes)
+          };
+        })
+        .filter(r => r !== null);
+    }
+
+    function renderPrecisaoTheta(rows) {
+      const canvas = document.getElementById('precisao-theta-chart');
+      if (!canvas) return;
+      destroyPrecisaoChart('theta');
+      if (!rows.length) return;
+
+      const sorted = rows.slice().sort((a, b) => a.theta - b.theta);
+      const labels = sorted.map(r => r.name);
+      const colors = sorted.map(r => tierColorForNota(r.nota));
+
+      const ciData = sorted.map(r => r.se === null ? null : [r.theta - 1.96 * r.se, r.theta + 1.96 * r.se]);
+      const pointData = sorted.map(r => r.theta);
+
+      const allVals = [];
+      sorted.forEach(r => {
+        allVals.push(r.theta);
+        if (r.se !== null) allVals.push(r.theta - 1.96 * r.se, r.theta + 1.96 * r.se);
+      });
+      const yMin = Math.min.apply(null, allVals) - 0.3;
+      const yMax = Math.max.apply(null, allVals) + 0.3;
+
+      precisaoCharts.theta = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'IC 95%',
+              data: ciData,
+              backgroundColor: colors,
+              borderColor: colors,
+              borderWidth: 1,
+              barPercentage: 0.18,
+              categoryPercentage: 0.9,
+              order: 2
+            },
+            {
+              label: 'Theta',
+              type: 'line',
+              data: pointData,
+              showLine: false,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: colors,
+              pointBorderColor: cssVar('--bg-card'),
+              pointBorderWidth: 1,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const r = sorted[ctx.dataIndex];
+                  if (ctx.datasetIndex === 1) return 'Theta: ' + r.theta.toFixed(3);
+                  if (r.se === null) return 'SE indisponível';
+                  return 'IC 95%: ' + (r.theta - 1.96 * r.se).toFixed(2) + ' a ' +
+                         (r.theta + 1.96 * r.se).toFixed(2) + '  (SE ' + r.se.toFixed(3) + ')';
+                }
+              }
+            }
+          },
+          scales: {
+            y: { min: yMin, max: yMax, ticks: { font: { size: 11 }, color: cssVar('--ink-muted') }, grid: { color: cssVar('--border-soft') } },
+            x: { ticks: { font: { size: 9 }, color: cssVar('--ink-muted'), maxRotation: 90, minRotation: 45, autoSkip: false }, grid: { display: false } }
+          }
+        },
+        plugins: [{
+          id: 'precisaoZeroLine',
+          afterDraw: function(chart) {
+            const c = chart.ctx;
+            const y = chart.scales.y.getPixelForValue(0);
+            if (y < chart.chartArea.top || y > chart.chartArea.bottom) return;
+            c.save();
+            c.strokeStyle = cssVar('--ink-muted');
+            c.lineWidth = 1;
+            c.setLineDash([4, 4]);
+            c.beginPath(); c.moveTo(chart.chartArea.left, y); c.lineTo(chart.chartArea.right, y); c.stroke();
+            c.restore();
+          }
+        }]
+      });
+    }
+
     function renderPrecisao() {
       const sel = document.getElementById('precisao-test-select');
       if (!sel) return;
@@ -1527,7 +1657,12 @@ wrap.innerHTML =
       if (prev && scopeTests.find(t => t.id === prev)) sel.value = prev;
       else sel.value = scopeTests[scopeTests.length - 1].id;
 
-      // Gráficos: etapas 2–4.
+      const rows = getPrecisaoRows(sel.value);
+
+      if (uiState.precisaoTab === 'confianca') {
+        renderPrecisaoTheta(rows);
+      }
+    
     }
 
     function renderDescritores() {
