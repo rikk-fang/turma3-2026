@@ -1810,6 +1810,97 @@ wrap.innerHTML =
         }]
       });
     }
+        function renderPrecisaoTrend() {
+      const canvas = document.getElementById('precisao-trend-chart');
+      if (!canvas) return;
+      destroyPrecisaoChart('trend');
+
+      const cls = uiState.precisaoClass || 'all';
+      const scopeTests = getTestsForScope();
+      if (!scopeTests.length) return;
+
+      const students = appData.students.filter(s => cls === 'all' || getTurmaFromId(s.id) === cls);
+
+      const impreciso = [];
+      const semDados = [];
+
+      scopeTests.forEach(t => {
+        const totalItens = appData.testModel
+          ? appData.testModel.filter(i => i.test_id === t.id).length
+          : 0;
+        let nImpreciso = 0;
+        let nSemDados = 0;
+
+        students.forEach(s => {
+          const e = appData.scores.find(sc => sc.student_id === s.id && sc.test_id === t.id);
+          if (!e) return;
+          const theta = parseNum(e.theta);
+          if (theta === null) return;
+          const blank = totalItens > 0 && parseNum(e.total_mistakes) === totalItens;
+          if (blank) { nSemDados++; return; }
+          const se = parseNum(e.se_eap);
+          if (se !== null && se > 0.5) nImpreciso++;
+        });
+
+        impreciso.push(nImpreciso);
+        semDados.push(nSemDados);
+      });
+
+      const maxVal = Math.max.apply(null, impreciso.concat(semDados));
+
+      precisaoCharts.trend = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: scopeTests.map(t => getTestLabel(t)),
+          datasets: [
+            {
+              label: 'Estimativa imprecisa (SE > 0,50)',
+              data: impreciso,
+              borderColor: cssVar('--tier-c-border'),
+              backgroundColor: cssVar('--tier-c-border') + '22',
+              tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
+            },
+            {
+              label: 'Sem acertos',
+              data: semDados,
+              borderColor: cssVar('--ink-muted'),
+              backgroundColor: cssVar('--ink-muted') + '22',
+              borderDash: [5, 5],
+              tension: 0.3, pointRadius: 5, pointHoverRadius: 7, fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 16 } },
+            tooltip: {
+              backgroundColor: cssVar('--bg-card'),
+              titleColor: cssVar('--ink'),
+              bodyColor: cssVar('--ink-soft'),
+              borderColor: cssVar('--border-soft'),
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.dataset.label + ': ' + ctx.parsed.y + ' aluno(s)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              min: 0,
+              suggestedMax: Math.max(5, maxVal + 1),
+              ticks: { font: { size: 11 }, color: cssVar('--ink-muted'), precision: 0 },
+              grid: { color: cssVar('--border-soft') }
+            },
+            x: { ticks: { font: { size: 10 }, color: cssVar('--ink-muted') }, grid: { display: false } }
+          }
+        }
+      });
+    }
        function renderPrecisao() {
       const sel = document.getElementById('precisao-test-select');
       const selWrap = sel ? sel.closest('.test-selector') : null;
@@ -1845,9 +1936,11 @@ wrap.innerHTML =
           : 'Erro padrão da estimativa (SE). Acima de 0,50 a nota deve ser lida com cautela.';
       }
 
-      if (uiState.precisaoTab === 'confianca') {
+         if (uiState.precisaoTab === 'confianca') {
         renderPrecisaoTheta(rows);
         renderPrecisaoSE(rows);
+        renderPrecisaoTrend();
+  
       }
     }
 
