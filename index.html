@@ -273,6 +273,7 @@
         <button class="main-tab" onclick="setMainTab('evolucao')">Evolução</button>
         <button class="main-tab" onclick="setMainTab('ranking')">Ranking</button>
         <button class="main-tab" onclick="setMainTab('trajetoria')">Trajetória</button>
+        <button class="main-tab" onclick="setMainTab('precisao')">Precisão</button>
       </div>
 
      <div id="tab-tierlist">
@@ -330,7 +331,7 @@
         <p class="chart-note">Média de Nota e Theta por teste ao longo da série. Linhas de referência: Desejável (306), Básico (271), Elementar II (226).</p>
       </div>
 <div id="tab-padrao" style="display:none;">
-        <div class="padrao-tabs" style="margin-top:1rem;">
+                <div class="padrao-tabs" id="padrao-tab-group" style="margin-top:1rem;">
           <button class="padrao-tab active" onclick="setPadraoTab('gabarito')">Gabarito</button>
           <button class="padrao-tab" onclick="setPadraoTab('descritores')">Descritores</button>
         </div>
@@ -400,6 +401,45 @@
           <canvas id="trajetoria-chart"></canvas>
         </div>
         <p class="chart-note">Linhas sólidas: valores reais. Linhas tracejadas: projeção anterior ao teste. Baixa confiança (menos de 3 testes anteriores) aparece mais clara.</p>
+           <div id="tab-precisao" style="display:none;">
+        <div class="controls" style="margin-top:1rem;">
+          <div class="tab-group" id="precisao-class-tabs">
+            <button class="tab active" onclick="setPrecisaoClass('all')">Geral</button>
+            <button class="tab" onclick="setPrecisaoClass('A')">Turma A</button>
+            <button class="tab" onclick="setPrecisaoClass('B')">Turma B</button>
+          </div>
+          <select id="cycle-select-precisao" onchange="setCycle(this.value)" style="font-size:13px;padding:6px 10px;border:1px solid var(--border-soft);border-radius:8px;background:var(--bg-card);color:var(--ink);">
+          </select>
+          <div class="test-selector" style="margin-bottom:0;">
+            <label>Teste:</label>
+            <select id="precisao-test-select" onchange="renderPrecisao()"></select>
+          </div>
+        </div>
+
+        <div class="padrao-tabs" id="precisao-tab-group">
+          <button class="padrao-tab active" onclick="setPrecisaoTab('confianca')">Confiança</button>
+          <button class="padrao-tab" onclick="setPrecisaoTab('modelo')">Modelo</button>
+        </div>
+
+        <div id="precisao-confianca">
+          <div class="chart-wrap"><canvas id="precisao-theta-chart"></canvas></div>
+          <p class="chart-note">Theta de cada aluno com intervalo de confiança de 95%. Barras mais longas indicam estimativa menos precisa.</p>
+
+          <div class="chart-wrap"><canvas id="precisao-se-chart"></canvas></div>
+          <p class="chart-note">Erro padrão da estimativa (SE). Acima de 0,50 a nota deve ser lida com cautela.</p>
+
+          <div id="precisao-trend-wrap" style="margin-top:1.5rem;">
+            <div class="modal-section-title" style="margin-bottom:1rem;">Ao longo dos testes</div>
+            <div class="chart-wrap"><canvas id="precisao-trend-chart"></canvas></div>
+            <p class="chart-note">Quantidade de alunos com estimativa imprecisa (SE &gt; 0,50) em cada teste.</p>
+          </div>
+        </div>
+
+        <div id="precisao-modelo" style="display:none;">
+          <div class="chart-wrap"><canvas id="precisao-modelo-chart"></canvas></div>
+          <p class="chart-note">Nota final × total de acertos. Alunos fora da diagonal são aqueles em que o modelo TRI divergiu da contagem simples de acertos.</p>
+        </div>
+      </div>
       </div>
 
     </div>
@@ -536,6 +576,8 @@ let uiState = {
       trajetoriaMode: 'class',
       trajetoriaStudent: '',
       trajetoriaMethod: 'regression'
+      precisaoClass: 'all',
+      precisaoTab: 'confianca'
     };
 
     function getTestsForScope() {
@@ -561,7 +603,7 @@ function getGrowthAnchorTest(tests) {
       const cycles = getCycleOptions();
       const options = '<option value="all">Todos os ciclos</option>' +
         cycles.map(c => '<option value="' + c + '">' + (c === '0' ? 'Ciclo 0 — Diagnóstico' : 'Ciclo ' + c) + '</option>').join('');
-      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria'].forEach(id => {
+           ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria','cycle-select-precisao'].forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.innerHTML = options; el.value = uiState.cycle; }
       });
@@ -569,7 +611,7 @@ function getGrowthAnchorTest(tests) {
 
 function setCycle(c) {
       uiState.cycle = c;
-      ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria'].forEach(id => {
+            ['cycle-select-tierlist','cycle-select-alunos','cycle-select-progresso','cycle-select-ranking','cycle-select-trajetoria','cycle-select-precisao'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = c;
       });
@@ -578,15 +620,16 @@ function setCycle(c) {
       if (document.getElementById('tab-progresso').style.display !== 'none') renderChart();
       if (document.getElementById('tab-ranking').style.display !== 'none') renderRanking();
       if (document.getElementById('tab-trajetoria').style.display !== 'none') renderTrajetoria();
+      if (document.getElementById('tab-precisao').style.display !== 'none') renderPrecisao();
     }
     let progressChart = null;
 
 function setMainTab(tab) {
-      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria'].forEach(t => {
+      ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria', 'precisao'].forEach(t => {
         document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
       });
      document.querySelectorAll('.main-tab').forEach((el, i) => {
-        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria'][i] === tab);
+        el.classList.toggle('active', ['tierlist', 'alunos', 'progresso', 'padrao', 'evolucao', 'ranking', 'trajetoria', 'precisao'][i] === tab);
       });
 if (tab === 'progresso') renderChart();
       if (tab === 'alunos') renderRoster();
@@ -594,6 +637,7 @@ if (tab === 'progresso') renderChart();
     if (tab === 'evolucao') renderEvolucao();
     if (tab === 'ranking') renderRanking();
     if (tab === 'trajetoria') renderTrajetoria();
+    if (tab === 'precisao') renderPrecisao();
     }
 
     function setView(v) {
@@ -1443,13 +1487,46 @@ wrap.innerHTML =
       });
       renderPadrao();
     }
-    function setPadraoTab(tab) {
+        function setPadraoTab(tab) {
       document.getElementById('padrao-gabarito').style.display = tab === 'gabarito' ? 'block' : 'none';
       document.getElementById('padrao-descritores').style.display = tab === 'descritores' ? 'block' : 'none';
-      document.querySelectorAll('.padrao-tab').forEach((el, i) => {
+      document.querySelectorAll('#padrao-tab-group .padrao-tab').forEach((el, i) => {
         el.classList.toggle('active', ['gabarito', 'descritores'][i] === tab);
       });
       if (tab === 'descritores') renderDescritores();
+    }
+
+    function setPrecisaoTab(tab) {
+      uiState.precisaoTab = tab;
+      document.getElementById('precisao-confianca').style.display = tab === 'confianca' ? 'block' : 'none';
+      document.getElementById('precisao-modelo').style.display = tab === 'modelo' ? 'block' : 'none';
+      document.querySelectorAll('#precisao-tab-group .padrao-tab').forEach((el, i) => {
+        el.classList.toggle('active', ['confianca', 'modelo'][i] === tab);
+      });
+      renderPrecisao();
+    }
+
+    function setPrecisaoClass(c) {
+      uiState.precisaoClass = c;
+      document.querySelectorAll('#precisao-class-tabs .tab').forEach((t, i) => {
+        t.classList.toggle('active', ['all', 'A', 'B'][i] === c);
+      });
+      renderPrecisao();
+    }
+
+    function renderPrecisao() {
+      const sel = document.getElementById('precisao-test-select');
+      if (!sel) return;
+
+      const scopeTests = getTestsForScope();
+      if (!scopeTests.length) { sel.innerHTML = ''; return; }
+
+      const prev = sel.value;
+      sel.innerHTML = scopeTests.map(t => '<option value="' + t.id + '">' + getTestLabel(t) + '</option>').join('');
+      if (prev && scopeTests.find(t => t.id === prev)) sel.value = prev;
+      else sel.value = scopeTests[scopeTests.length - 1].id;
+
+      // Gráficos: etapas 2–4.
     }
 
     function renderDescritores() {
