@@ -251,12 +251,29 @@
       return entry && (entry.absent === true || entry.absent === 'TRUE' || entry.absent === 'true');
     }
 
-function pct(entry, test) {
+function pct(entry, test, area) {
+  area = area || uiState.area;
   if (!entry || isAbsentEntry(entry)) return NaN;
-  const acertos = num(entry.acertos);
-  const total = num(entry.total_questoes) || (test ? num(test.total_questoes) : NaN);
-  if (isNaN(acertos) || !total) return NaN;
-  return (acertos / total) * 100;
+
+  const lc = () => {
+    const acertos = num(entry.acertos);
+    const total = num(entry.total_questoes) || (test ? num(test.total_questoes) : NaN);
+    if (isNaN(acertos) || !total) return NaN;
+    return (acertos / total) * 100;
+  };
+  const ch = () => {
+    const acertos = num(entry.acertos_ch);
+    const total = num(entry.total_ch) || (test ? num(test.total_ch) : NaN);
+    if (isNaN(acertos) || !total) return NaN;
+    return (acertos / total) * 100;
+  };
+
+  if (area === 'ch') return ch();
+  if (area === 'geral') {
+    const a = lc(), b = ch();
+    return (isNaN(a) || isNaN(b)) ? NaN : (a + b) / 2;
+  }
+  return lc();
 }
 
     function studentHasAnyScore(studentId) {
