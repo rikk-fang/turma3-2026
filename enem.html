@@ -1,13 +1,13 @@
 <!--
-  ENEM · Linguagens — Acompanhamento de Simulados
-  By Fang and Claw 2026 v1.1
+  ENEM · Acompanhamento de Simulados
+  By Fang and Claw 2026 v1.2
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ENEM · Linguagens</title>
+  <title>ENEM</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -135,7 +135,7 @@
     <div id="app">
       <div class="app-header">
         <div class="app-header-title">
-          <h1>ENEM · Linguagens</h1>
+          <h1>ENEM</h1>
           <p class="subtitle">Acompanhamento de simulados por acertos</p>
           <button class="nav-link-btn" onclick="location.href='index.html'">← Voltar para SAEPE</button>
         </div>
@@ -153,10 +153,16 @@
           <option value="3A">3A</option>
           <option value="3B">3B</option>
         </select>
-        <label for="grade-filter-select">Mostrar:</label>
+             <label for="grade-filter-select">Mostrar:</label>
         <select id="grade-filter-select" onchange="onGradeFilterChange()">
           <option value="all">Todos</option>
           <option value="graded">Somente com nota</option>
+        </select>
+        <label for="area-select">Área:</label>
+        <select id="area-select" onchange="onAreaChange()">
+          <option value="lc">Linguagens</option>
+          <option value="ch">Humanas</option>
+          <option value="geral">Geral</option>
         </select>
       </div>
 
@@ -184,7 +190,7 @@
       </div>
 
       <footer>
-        By Fang and Claw 2026 &mdash; ENEM v1.1 2026
+        By Fang and Claw 2026 &mdash; ENEM v1.2 2026
       </footer>
     </div>
   </div>
@@ -207,13 +213,42 @@
     const SCRIPT_URL_ENEM = 'https://script.google.com/macros/s/AKfycbz0jbrAN0CVlLJg1nOqw7mj9Rd7betFdf_mcs8ffEjfisQohbRtIpplgG-qjug7Qt_e/exec';
 
     let enemData = { students: [], tests: [], scores: [], online: true };
-    let uiState = { turma: 'all', selectedStudents: [], mainTab: 'ranking', gradeFilter: 'all' };
+    let uiState = { turma: 'all', selectedStudents: [], mainTab: 'ranking', gradeFilter: 'all', area: 'lc' };
 
-    function onGradeFilterChange() {
+      function onGradeFilterChange() {
       uiState.gradeFilter = document.getElementById('grade-filter-select').value;
       renderAll();
     }
 
+    function onAreaChange() {
+      uiState.area = document.getElementById('area-select').value;
+      renderAll();
+    }
+    const AREA_NAMES = { lc: 'Linguagens', ch: 'Humanas', geral: 'Geral' };
+
+    // Humanas and Geral only include tests that had a humanities section (rule A)
+    function testInArea(t, area) {
+      area = area || uiState.area;
+      if (area === 'lc') return true;   // every legacy test is Linguagens
+      return num(t.total_ch) > 0;
+    }
+
+    function acertosText(entry, test, area) {
+      const ch = area === 'ch';
+      const raw = entry ? (ch ? entry.acertos_ch : entry.acertos) : undefined;
+      const acertos = (raw !== undefined && raw !== null && raw !== '') ? raw : '—';
+      const total = ch
+        ? ((entry && entry.total_ch) || test.total_ch || '—')
+        : ((entry && entry.total_questoes) || test.total_questoes || '—');
+      return `${acertos}/${total}`;
+    }
+
+    function pctCellHtml(p, absent) {
+      if (absent) return '—';
+      return `
+        <div>${isNaN(p) ? '—' : p.toFixed(0) + '%'}</div>
+        <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${isNaN(p) ? 0 : p}%"></div></div>`;
+    }
     async function fetchEnemData() {
       try {
         const res = await fetch(SCRIPT_URL_ENEM + '?action=getData');
@@ -240,7 +275,9 @@
     }
 
     function getSortedTests() {
-      return [...enemData.tests].sort((a, b) => new Date(a.date) - new Date(b.date));
+      return [...enemData.tests]
+        .filter(t => testInArea(t))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
     function getEntry(studentId, testId) {
@@ -361,7 +398,7 @@ function studentLatestPct(studentId, tests) {
         </div>
         <div class="stat-card">
           <div class="stat-val">${isNaN(avgOverall) ? '—' : avgOverall.toFixed(0) + '%'}</div>
-          <div class="stat-lbl">Média geral</div>
+          <div class="stat-lbl">Média dos simulados</div>
         </div>
       `;
     }
@@ -389,7 +426,7 @@ function studentLatestPct(studentId, tests) {
           </div>
           <div>
             <div class="rank-score">${r.avg.toFixed(0)}%</div>
-            <div class="rank-score-lbl">MÉDIA GERAL</div>
+            <div class="rank-score-lbl">MÉDIA · ${AREA_NAMES[uiState.area].toUpperCase()}</div>
           </div>
         </div>
       `).join('');
@@ -449,7 +486,7 @@ function studentLatestPct(studentId, tests) {
   return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
 });
         datasets = [{
-          label: uiState.turma === 'all' ? 'Média geral' : 'Média Turma ' + uiState.turma,
+          label: (uiState.turma === 'all' ? 'Média geral' : 'Média Turma ' + uiState.turma) + ' · ' + AREA_NAMES[uiState.area],
           data,
           borderColor: '#0d6e5e',
           backgroundColor: '#0d6e5e',
@@ -475,10 +512,11 @@ function studentLatestPct(studentId, tests) {
       });
     }
 
-    function renderTable() {
+       function renderTable() {
       const wrap = document.getElementById('table-wrap');
       const tests = getSortedTests();
       const students = getVisibleStudents();
+      const geral = uiState.area === 'geral';
 
       if (!tests.length || !students.length) {
         wrap.innerHTML = '<div class="empty-state">Nenhum simulado registrado ainda.</div>';
@@ -486,46 +524,46 @@ function studentLatestPct(studentId, tests) {
       }
 
       let rows = '';
-      // one row per student per test, most recent test first — includes ungraded rows as a checklist
       [...tests].reverse().forEach(t => {
         students.forEach(s => {
           const entry = getEntry(s.id, t.id);
-          const p = entry ? pct(entry, t) : NaN;
           const absent = isAbsentEntry(entry);
-          const acertos = entry && entry.acertos !== undefined && entry.acertos !== '' ? entry.acertos : '—';
-          const total = (entry && entry.total_questoes) ? entry.total_questoes : (t.total_questoes || '—');
+          const p = entry ? pct(entry, t) : NaN;
+          const acertosCells = geral
+            ? `<td class="num">${absent ? 'Ausente' : acertosText(entry, t, 'lc')}</td>
+               <td class="num">${absent ? 'Ausente' : acertosText(entry, t, 'ch')}</td>`
+            : `<td class="num">${absent ? 'Ausente' : acertosText(entry, t, uiState.area)}</td>`;
           rows += `
             <tr class="clickable" onclick="openModal('${s.id}')">
               <td>${t.name}</td>
               <td>${s.name}</td>
-              <td class="num">${absent ? 'Ausente' : `${acertos}/${total}`}</td>
-              <td>
-                ${absent ? '—' : `
-                  <div>${isNaN(p) ? '—' : p.toFixed(0) + '%'}</div>
-                  <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${isNaN(p) ? 0 : p}%"></div></div>
-                `}
-              </td>
+              ${acertosCells}
+              <td>${pctCellHtml(p, absent)}</td>
             </tr>`;
         });
       });
 
+      const head = geral
+        ? '<th>Simulado</th><th>Aluno</th><th>Ling.</th><th>Hum.</th><th>% Geral</th>'
+        : '<th>Simulado</th><th>Aluno</th><th>Acertos</th><th>%</th>';
+
       wrap.innerHTML = `
         <table class="sims-table">
-          <thead>
-            <tr><th>Simulado</th><th>Aluno</th><th>Acertos</th><th>%</th></tr>
-          </thead>
+          <thead><tr>${head}</tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
     }
-
-    function openModal(studentId) {
+       
+   
+      function openModal(studentId) {
       const student = enemData.students.find(s => s.id === studentId);
       if (!student) return;
       const tests = getSortedTests();
+      const geral = uiState.area === 'geral';
 
       document.getElementById('modal-name').textContent = student.name;
-      document.getElementById('modal-id').textContent = student.id;
+      document.getElementById('modal-id').textContent = student.id + ' · ' + AREA_NAMES[uiState.area];
 
       const avg = studentAvgPct(studentId, tests);
       const latest = studentLatestPct(studentId, tests);
@@ -533,7 +571,7 @@ function studentLatestPct(studentId, tests) {
       document.getElementById('modal-stats').innerHTML = `
         <div class="stat-card">
           <div class="stat-val">${isNaN(avg) ? '—' : avg.toFixed(0) + '%'}</div>
-          <div class="stat-lbl">Média geral</div>
+          <div class="stat-lbl">Média dos simulados</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">${isNaN(latest) ? '—' : latest.toFixed(0) + '%'}</div>
@@ -547,31 +585,32 @@ function studentLatestPct(studentId, tests) {
         if (!entry) return;
         const absent = isAbsentEntry(entry);
         const p = pct(entry, t);
-        const acertos = entry.acertos !== undefined && entry.acertos !== '' ? entry.acertos : '—';
-        const total = entry.total_questoes || t.total_questoes || '—';
+        const acertosCells = geral
+          ? `<td class="num">${absent ? 'Ausente' : acertosText(entry, t, 'lc')}</td>
+             <td class="num">${absent ? 'Ausente' : acertosText(entry, t, 'ch')}</td>`
+          : `<td class="num">${absent ? 'Ausente' : acertosText(entry, t, uiState.area)}</td>`;
         rows += `
           <tr>
             <td>${t.name}</td>
-            <td class="num">${absent ? 'Ausente' : `${acertos}/${total}`}</td>
-            <td>
-              ${absent ? '—' : `
-                <div>${isNaN(p) ? '—' : p.toFixed(0) + '%'}</div>
-                <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${isNaN(p) ? 0 : p}%"></div></div>
-              `}
-            </td>
+            ${acertosCells}
+            <td>${pctCellHtml(p, absent)}</td>
           </tr>`;
       });
 
+      const head = geral
+        ? '<th>Simulado</th><th>Ling.</th><th>Hum.</th><th>% Geral</th>'
+        : '<th>Simulado</th><th>Acertos</th><th>%</th>';
+
       document.getElementById('modal-table-wrap').innerHTML = rows ? `
         <table class="sims-table">
-          <thead><tr><th>Simulado</th><th>Acertos</th><th>%</th></tr></thead>
+          <thead><tr>${head}</tr></thead>
           <tbody>${rows}</tbody>
         </table>
       ` : '<div class="empty-state">Nenhum simulado registrado para este aluno.</div>';
 
       document.getElementById('modal-overlay').classList.add('open');
     }
-
+ 
     function closeModal() {
       document.getElementById('modal-overlay').classList.remove('open');
     }
