@@ -1,6 +1,6 @@
 <!--
   Tier List de Proficiência modelo SAEPE
-  By Fang and Claw 2026 v3.1 
+  By Fang and Claw 2026 v3.2 
 -->
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -344,12 +344,14 @@
           </div>
           <div id="padrao-table-wrap"></div>
 <div id="padrao-desc-wrap" style="margin-top:1.5rem;">
-            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor</div>
-            <div class="tab-group" id="padrao-desc-class-tabs" style="margin-bottom:1rem;">
+                        <div class="tab-group" id="padrao-desc-class-tabs" style="margin-bottom:1.25rem;">
               <button class="tab active" onclick="setPadraoDescClass('all')">Todas</button>
               <button class="tab" onclick="setPadraoDescClass('A')">Turma A</button>
               <button class="tab" onclick="setPadraoDescClass('B')">Turma B</button>
             </div>
+            <div class="modal-section-title" style="margin-bottom:1rem;">Questões mais erradas</div>
+            <div id="padrao-item-bars" style="margin-bottom:1.5rem;"></div>
+            <div class="modal-section-title" style="margin-bottom:1rem;">Erros por descritor</div>
             <div id="padrao-desc-bars"></div>
           </div>
         </div>
@@ -459,7 +461,7 @@
     </div>
     
     <footer>
-      By Fang and Claw 2026 &mdash; v3.1 2026
+      By Fang and Claw 2026 &mdash; v3.2 2026
     </footer>
   </div>
 
@@ -1069,6 +1071,7 @@ function openProfile(studentId) {
       else sel.value = getLatestTestId();
 
 const testId = sel.value;
+      renderItemErrors(testId);
       const testObj = appData.tests.find(t => t.id === testId);
       const pdfLink = document.getElementById('padrao-pdf-link');
       if (pdfLink) {
@@ -1144,11 +1147,53 @@ descWrap.innerHTML = descSorted.map(d =>
           '<div class="desc-error-row">' +
           '<div class="desc-error-name">' + d.desc + '</div>' +
           '<div class="desc-error-bar-wrap"><div class="desc-error-bar" style="width:' + Math.round(d.pct * 100) + '%"></div></div>' +
-          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '% <span style="color:#bbb;font-size:11px;">(' + d.erros + '/' + d.nStudents + ')</span></div>' +
+          '<div class="desc-error-pct">' + Math.round(d.pct * 100) + '% <span style="color:#bbb;font-size:11px;">'(' + d.erros + '/' + d.total + ')</span></div>' +
           '</div>'
         ).join('');
       }
     }
+    function renderItemErrors(testId) {
+      const wrap = document.getElementById('padrao-item-bars');
+      if (!wrap) return;
+      const cls = uiState.padraoDescClass || 'all';
+      const turmas = cls === 'all' ? ['A', 'B'] : [cls];
+      const rows = (appData.itemErrors || []).filter(r => r.test_id === testId && turmas.includes(r.turma));
+
+      if (!rows.length) {
+        wrap.innerHTML = '<div class="no-data">Sem dados de erro por questão para este teste.</div>';
+        return;
+      }
+
+      const turmasComDados = turmas.filter(t => rows.some(r => r.turma === t));
+      const map = {};
+      rows.forEach(r => {
+        if (!map[r.item]) map[r.item] = { item: r.item, descriptor: r.descriptor, erros: 0, turmas: new Set() };
+        map[r.item].erros += parseInt(r.erros) || 0;
+        map[r.item].turmas.add(r.turma);
+      });
+
+      const nAlunos = appData.scores.filter(s =>
+        s.test_id === testId && turmas.includes(getTurmaFromId(s.student_id))
+      ).length;
+
+      const top = Object.values(map)
+        .sort((a, b) => b.erros - a.erros)
+        .slice(0, 5)
+        .map(it => ({ ...it, partial: it.turmas.size < turmasComDados.length }));
+
+      const anyPartial = top.some(it => it.partial);
+
+      wrap.innerHTML = top.map(it => {
+        const pct = nAlunos ? Math.round(it.erros / nAlunos * 100) : 0;
+        return '<div class="desc-error-row">' +
+          '<div class="desc-error-name"><strong>' + it.item + '</strong> <span style="color:var(--ink-muted);font-size:12px;">· ' + (it.descriptor || '—') + '</span></div>' +
+          '<div class="desc-error-bar-wrap"><div class="desc-error-bar" style="width:' + Math.min(pct, 100) + '%"></div></div>' +
+          '<div class="desc-error-pct">' + (it.partial ? '≥' : '') + pct + '% <span style="color:#bbb;font-size:11px;">(' + (it.partial ? '≥' : '') + it.erros + '/' + nAlunos + ')</span></div>' +
+          '</div>';
+      }).join('') +
+      (anyPartial ? '<p class="chart-note" style="text-align:left;">≥ questão fora do top 5 de uma das turmas; o total real pode ser maior.</p>' : '');
+    }
+
     let evolucaoChart = null;
 
     function renderEvolucao() {
