@@ -490,8 +490,8 @@
     }
 
     function scoreToTier(score) {
-      for (const t of TIERS) {
-        if (score >= t.min && score <= t.max) return t.id;
+            for (const t of TIERS) {
+        if (score >= t.min) return t.id;
       }
       return 'C';
     }
